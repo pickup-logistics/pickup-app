@@ -1,0 +1,15 @@
+{
+  "name": "pickup-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PickUp - Multi-modal transportation platform",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:admin": "cd admin-panel && npm run dev",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../admin-panel && npm install"
+  },
+  "keywords": ["transportation", "logistics", "bike-hailing"],
+  "author": "Ebis",
+  "license": "MIT"
+}
