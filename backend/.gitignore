@@ -33,3 +33,6 @@ coverage/
 
 # Prisma
 prisma/migrations/
+
+# Postman
+postman/*.environment.json
