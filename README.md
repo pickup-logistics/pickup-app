@@ -144,8 +144,9 @@ pickup-app/
 
 ### Phase 1: MVP (Bikes Only) ✅
 - [x] Project structure setup
-- [ ] Authentication system
-- [ ] Ride booking
+- [x] Database Schema
+- [x] Authentication system
+- [x] Ride booking
 - [ ] Real-time tracking
 - [ ] Payment (cash)
 - [ ] Rating system
