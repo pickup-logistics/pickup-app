@@ -9,7 +9,14 @@
     "dev:admin": "cd admin-panel && npm run dev",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../admin-panel && npm install"
   },
-  "keywords": ["transportation", "logistics", "bike-hailing"],
+  "keywords": [
+    "transportation",
+    "logistics",
+    "bike-hailing"
+  ],
   "author": "Ebis",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.10.1"
+  }
 }
