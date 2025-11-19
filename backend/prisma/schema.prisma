@@ -34,6 +34,7 @@ model User {
   password  String?    // For future email/password login
   role      UserRole   @default(USER)
   status    UserStatus @default(ACTIVE)
+  transactions    Transaction[]
   
   // Profile
   avatar          String?
@@ -168,6 +169,7 @@ enum PaymentStatus {
 
 model Ride {
   id       String      @id @default(cuid())
+  transactions    Transaction[]
   
   // Participants
   userId   String
@@ -433,4 +435,56 @@ model AdminLog {
   @@index([action])
   @@index([createdAt])
   @@map("admin_logs")
+}
+
+// ============================================
+// TRANSACTION MODEL (For Payment History)
+// ============================================
+
+enum TransactionType {
+  PAYMENT      // User pays for ride
+  REFUND       // Refund to user
+  WITHDRAWAL   // Rider withdraws earnings
+  COMMISSION   // Platform commission
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Transaction {
+  id        String            @id @default(cuid())
+  
+  // Related entities
+  rideId    String?
+  ride      Ride?             @relation(fields: [rideId], references: [id])
+  userId    String
+  user      User              @relation(fields: [userId], references: [id])
+  
+  // Transaction details
+  amount    Float
+  type      TransactionType
+  status    TransactionStatus @default(PENDING)
+  
+  // Payment gateway info
+  provider  String?           // 'paystack', 'flutterwave', 'cash', 'wallet'
+  reference String?           @unique  // Payment reference from gateway
+  
+  // Additional info
+  description String?
+  metadata    Json?
+  
+  // Timestamps
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  
+  @@index([userId])
+  @@index([rideId])
+  @@index([reference])
+  @@index([status])
+  @@index([createdAt])
+  @@map("transactions")
 }
