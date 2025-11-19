@@ -148,7 +148,7 @@ pickup-app/
 - [x] Authentication system
 - [x] Ride booking
 - [x] Real-time tracking
-- [ ] Payment (cash)
+- [x] Payment (cash)
 - [x] Rating system
 
 ### Phase 2: Enhanced Features
