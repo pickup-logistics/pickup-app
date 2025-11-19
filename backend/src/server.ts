@@ -12,6 +12,7 @@ dotenv.config();
 import authRoutes from './routes/auth.routes';
 import riderRoutes from './routes/rider.routes';
 import adminRoutes from './routes/admin.routes';
+import rideRoutes from './routes/ride.routes';
 
 // Import middlewares
 import { errorHandler } from './middlewares/errorHandler';
@@ -62,7 +63,7 @@ const API_VERSION = process.env.API_VERSION || 'v1';
 app.use(`/api/${API_VERSION}/auth`, authRoutes);
 app.use(`/api/${API_VERSION}/riders`, riderRoutes);
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
-// app.use(`/api/${API_VERSION}/rides`, rideRoutes);      // Phase 5
+app.use(`/api/${API_VERSION}/rides`, rideRoutes);
 // app.use(`/api/${API_VERSION}/ratings`, ratingRoutes);  // Phase 7
 
 // Socket.IO connection handling
@@ -81,22 +82,46 @@ io.on('connection', (socket) => {
     console.log(`User ${userId} joined their room`);
   });
 
+  // Join ride room
+  socket.on('ride:join', (rideId: string) => {
+    socket.join(`ride:${rideId}`);
+    console.log(`Joined ride room: ${rideId}`);
+  });
+
   // Handle rider location updates
-  socket.on('rider:location-update', (data: { riderId: string; latitude: number; longitude: number }) => {
-    // Broadcast to all users
+  socket.on('rider:location-update', (data: { riderId: string; latitude: number; longitude: number; rideId?: string }) => {
+    // Broadcast to specific ride if ongoing
+    if (data.rideId) {
+      io.to(`ride:${data.rideId}`).emit('rider:location-changed', data);
+    }
+    // Broadcast to all users searching for riders
     socket.broadcast.emit('rider:location-changed', data);
   });
 
   // Handle ride status updates
   socket.on('ride:status-update', (data: { rideId: string; status: string; riderId?: string; userId?: string }) => {
+    // Broadcast to ride room
+    io.to(`ride:${data.rideId}`).emit('ride:status-changed', data);
+    
     // Send to specific rider
     if (data.riderId) {
       io.to(`rider:${data.riderId}`).emit('ride:status-changed', data);
     }
+    
     // Send to specific user
     if (data.userId) {
       io.to(`user:${data.userId}`).emit('ride:status-changed', data);
     }
+  });
+
+  // Notify riders of new ride request
+  socket.on('ride:notify-riders', (data: { rideId: string; pickupLocation: any; riders: string[] }) => {
+    data.riders.forEach((riderId) => {
+      io.to(`rider:${riderId}`).emit('ride:new-request', {
+        rideId: data.rideId,
+        pickupLocation: data.pickupLocation,
+      });
+    });
   });
 
   // Handle disconnect
