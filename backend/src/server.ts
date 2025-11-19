@@ -13,6 +13,7 @@ import authRoutes from './routes/auth.routes';
 import riderRoutes from './routes/rider.routes';
 import adminRoutes from './routes/admin.routes';
 import rideRoutes from './routes/ride.routes';
+import locationRoutes from './routes/location.routes';
 
 // Import middlewares
 import { errorHandler } from './middlewares/errorHandler';
@@ -64,6 +65,7 @@ app.use(`/api/${API_VERSION}/auth`, authRoutes);
 app.use(`/api/${API_VERSION}/riders`, riderRoutes);
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/rides`, rideRoutes);
+app.use(`/api/${API_VERSION}/location`, locationRoutes);
 // app.use(`/api/${API_VERSION}/ratings`, ratingRoutes);  // Phase 7
 
 // Socket.IO connection handling
@@ -143,6 +145,7 @@ server.listen(PORT, () => {
   console.log(`🔗 API: http://localhost:${PORT}/api/${API_VERSION}`);
   console.log(`🏥 Health: http://localhost:${PORT}/health`);
   console.log(`📁 Uploads: http://localhost:${PORT}/uploads`);
+  console.log(`📡 WebSocket: Real-time tracking enabled`);
 });
 
 export default app;
