@@ -147,7 +147,7 @@ pickup-app/
 - [x] Database Schema
 - [x] Authentication system
 - [x] Ride booking
-- [ ] Real-time tracking
+- [x] Real-time tracking
 - [ ] Payment (cash)
 - [ ] Rating system
 
