@@ -149,7 +149,7 @@ pickup-app/
 - [x] Ride booking
 - [x] Real-time tracking
 - [ ] Payment (cash)
-- [ ] Rating system
+- [x] Rating system
 
 ### Phase 2: Enhanced Features
 - [ ] Add Tricycle support
