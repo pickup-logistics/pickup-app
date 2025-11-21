@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { PhoneInput } from '@/components/common/PhoneInput';
 import { Button } from '@/components/common/Button';
-import { OTPVerification } from '../components/OTPVerification';
+import { OTPVerification } from '../components';
 import { Bike } from 'lucide-react';
 
 export const Login: React.FC = () => {

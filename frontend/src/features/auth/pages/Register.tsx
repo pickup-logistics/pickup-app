@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { PhoneInput } from '@/components/common/PhoneInput';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
-import { OTPVerification } from '../components/OTPVerification';
+import { OTPVerification } from '../components';
 import { Bike, User, Mail } from 'lucide-react';
 
 export const Register: React.FC = () => {
