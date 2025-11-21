@@ -2,6 +2,7 @@
   "name": "pickup-frontend",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "PickUp Frontend - User & Rider App",
   "scripts": {
     "dev": "vite",
@@ -10,18 +11,26 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@googlemaps/js-api-loader": "^1.16.2",
+    "@hookform/resolvers": "^5.2.2",
+    "@react-google-maps/api": "^2.20.7",
+    "@tanstack/react-query": "^5.90.10",
+    "@vis.gl/react-google-maps": "^1.7.1",
+    "axios": "^1.6.2",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "lucide-react": "^0.554.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.20.1",
-    "@tanstack/react-query": "^5.14.2",
-    "axios": "^1.6.2",
-    "socket.io-client": "^4.6.0",
-    "@googlemaps/js-api-loader": "^1.16.2",
-    "react-hot-toast": "^2.4.1",
-    "zustand": "^4.4.7",
-    "date-fns": "^3.0.0"
+    "react-hook-form": "^7.66.1",
+    "react-hot-toast": "^2.6.0",
+    "react-router-dom": "^6.30.2",
+    "socket.io-client": "^4.8.1",
+    "zod": "^4.1.12",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@types/node": "^24.10.1",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
@@ -34,6 +43,8 @@
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6",
     "typescript": "^5.2.2",
-    "vite": "^5.0.8"
+    "vite": "^5.0.8",
+    "vite-plugin-pwa": "^1.1.0",
+    "workbox-window": "^7.4.0"
   }
 }
