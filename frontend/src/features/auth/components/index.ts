@@ -1,1 +1,1 @@
-export { OTPVerification } from './OTPVerification.tsx';
+export { OTPVerification } from './OTPVerification';
