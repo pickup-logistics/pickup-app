@@ -103,7 +103,7 @@ export const Login: React.FC = () => {
             </div>
           </form>
 
-          <div className="mt-6 text-center space-y-3">
+          <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
               <Link
@@ -111,16 +111,6 @@ export const Login: React.FC = () => {
                 className="text-primary-600 hover:text-primary-700 font-medium"
               >
                 Sign up
-              </Link>
-            </p>
-
-            <p className="text-sm text-gray-600">
-              Are you a bike rider?{' '}
-              <Link
-                to="/driver/login"
-                className="text-primary-600 hover:text-primary-700 font-medium"
-              >
-                Login here
               </Link>
             </p>
           </div>

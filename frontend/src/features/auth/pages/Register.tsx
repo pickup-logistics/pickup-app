@@ -153,14 +153,8 @@ export const Register: React.FC = () => {
               </Link>
             </p>
 
-            <p className="text-sm text-gray-600">
-              Want to become a rider?{' '}
-              <Link
-                to="/driver/register"
-                className="text-primary-600 hover:text-primary-700 font-medium"
-              >
-                Register here
-              </Link>
+            <p className="text-xs text-gray-500 mt-3">
+              Want to become a rider? Create your account first, then apply from your dashboard
             </p>
           </div>
         </div>

@@ -5,7 +5,6 @@ import type {
   RiderRegisterData,
   FirebaseVerification,
   AuthResponse,
-  OTPResponse,
 } from '@/types/auth.types';
 
 export const authAPI = {
