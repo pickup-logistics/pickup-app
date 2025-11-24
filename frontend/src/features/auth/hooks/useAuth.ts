@@ -7,21 +7,22 @@ import type {
   LoginCredentials,
   UserRegisterData,
   RiderRegisterData,
-  OTPVerification,
+  FirebaseVerification,
 } from '@/types/auth.types';
 
 export const useAuth = () => {
   const navigate = useNavigate();
-  // const { setAuth, clearAuth, setLoading, user, isAuthenticated } = useAuthStore();
   const { setAuth, clearAuth, user, isAuthenticated } = useAuthStore();
 
   // ============= USER REGISTRATION =============
   const registerUser = useMutation({
-    mutationFn: (data: UserRegisterData) => authAPI.registerUser(data),
+    mutationFn: (data: UserRegisterData & { firebaseToken?: string }) =>
+      authAPI.registerUser(data),
     onSuccess: (response) => {
-      // Backend returns user data and token immediately on registration
-      if (response.data?.user && response.data?.token) {
-        setAuth(response.data.user, response.data.token, response.data.refreshToken);
+      // Backend returns user data and tokens immediately on registration
+      if (response.data?.user && response.data?.tokens) {
+        const { user, tokens } = response.data;
+        setAuth(user, tokens.accessToken, tokens.refreshToken);
         toast.success(response.message || 'Registration successful!');
         navigate('/');
       }
@@ -30,7 +31,7 @@ export const useAuth = () => {
       console.error('Registration error:', error.response?.data);
       const message = error.response?.data?.message || 'Registration failed';
       const errors = error.response?.data?.errors;
-      
+
       if (errors && Array.isArray(errors)) {
         // Show validation errors
         errors.forEach((err: any) => {
@@ -42,28 +43,17 @@ export const useAuth = () => {
     },
   });
 
-  // ============= USER LOGIN (SEND OTP) =============
-  const sendLoginOTP = useMutation({
-    mutationFn: (phone: string) => authAPI.sendLoginOTP(phone),
+  // ============= USER LOGIN WITH FIREBASE =============
+  const loginWithFirebase = useMutation({
+    mutationFn: (data: FirebaseVerification) => authAPI.loginWithFirebase(data),
     onSuccess: (response) => {
-      toast.success(response.message || 'OTP sent to your phone!');
-    },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to send OTP';
-      toast.error(message);
-    },
-  });
-
-  // ============= VERIFY OTP (USER) =============
-  const verifyUserOTP = useMutation({
-    mutationFn: (data: OTPVerification) => authAPI.verifyUserOTP(data),
-    onSuccess: (response) => {
-      if (response.data?.user && response.data?.token) {
-        setAuth(response.data.user, response.data.token, response.data.refreshToken);
+      if (response.data?.user && response.data?.tokens) {
+        const { user, tokens } = response.data;
+        setAuth(user, tokens.accessToken, tokens.refreshToken);
         toast.success('Login successful!');
-        
+
         // Navigate based on role
-        if (response.data.user.role === 'ADMIN') {
+        if (user.role === 'ADMIN') {
           navigate('/admin');
         } else {
           navigate('/');
@@ -71,21 +61,70 @@ export const useAuth = () => {
       }
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Invalid OTP';
+      const message = error.response?.data?.message || 'Login failed';
+      toast.error(message);
+    },
+  });
+
+  // ============= VERIFY FIREBASE TOKEN (USER) =============
+  const verifyUserOTP = useMutation({
+    mutationFn: (data: { phone: string; firebaseToken: string }) =>
+      authAPI.verifyUserOTP(data),
+    retry: false, // Don't retry Firebase verification
+    onSuccess: (response) => {
+      if (response.data?.user && response.data?.tokens) {
+        const { user, tokens } = response.data;
+        setAuth(user, tokens.accessToken, tokens.refreshToken);
+        toast.success('Login successful!');
+
+        // Navigate based on role
+        if (user.role === 'ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      }
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Verification failed';
+      toast.error(message);
+    },
+  });
+
+  // ============= PASSWORD LOGIN =============
+  const loginUser = useMutation({
+    mutationFn: (data: LoginCredentials) => authAPI.loginUser(data),
+    onSuccess: (response) => {
+      if (response.data?.user && response.data?.tokens) {
+        const { user, tokens } = response.data;
+        setAuth(user, tokens.accessToken, tokens.refreshToken);
+        toast.success('Login successful!');
+
+        if (user.role === 'ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      }
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Login failed';
       toast.error(message);
     },
   });
 
   // ============= RIDER REGISTRATION =============
   const registerRider = useMutation({
-    mutationFn: (data: RiderRegisterData) => authAPI.registerRider(data),
+    mutationFn: (data: RiderRegisterData & { firebaseToken?: string }) =>
+      authAPI.registerRider(data),
     onSuccess: (response) => {
-      if (response.data?.user && response.data?.token) {
-        setAuth(response.data.user, response.data.token, response.data.refreshToken);
+      if (response.data?.user && response.data?.tokens) {
+        const { user, tokens } = response.data;
+        setAuth(user, tokens.accessToken, tokens.refreshToken);
         toast.success(response.message || 'Registration successful!');
         navigate('/driver');
       } else {
-        toast.success(response.message || 'Registration successful! OTP sent.');
+        toast.success(response.message || 'Registration successful!');
       }
     },
     onError: (error: any) => {
@@ -96,9 +135,15 @@ export const useAuth = () => {
 
   // ============= RIDER LOGIN =============
   const loginRider = useMutation({
-    mutationFn: (data: LoginCredentials) => authAPI.loginRider(data),
+    mutationFn: (data: { phone: string; firebaseToken: string }) =>
+      authAPI.loginRider(data),
     onSuccess: (response) => {
-      toast.success(response.message || 'OTP sent to your phone!');
+      if (response.data?.user && response.data?.tokens) {
+        const { user, tokens } = response.data;
+        setAuth(user, tokens.accessToken, tokens.refreshToken);
+        toast.success('Login successful!');
+        navigate('/driver');
+      }
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Login failed';
@@ -106,30 +151,21 @@ export const useAuth = () => {
     },
   });
 
-  // ============= VERIFY OTP (RIDER) =============
+  // ============= VERIFY FIREBASE TOKEN (RIDER) =============
   const verifyRiderOTP = useMutation({
-    mutationFn: (data: OTPVerification) => authAPI.verifyRiderOTP(data),
+    mutationFn: (data: { phone: string; firebaseToken: string }) =>
+      authAPI.verifyRiderOTP(data),
+    retry: false, // Don't retry Firebase verification
     onSuccess: (response) => {
-      if (response.data?.user && response.data?.token) {
-        setAuth(response.data.user, response.data.token, response.data.refreshToken);
+      if (response.data?.user && response.data?.tokens) {
+        const { user, tokens } = response.data;
+        setAuth(user, tokens.accessToken, tokens.refreshToken);
         toast.success('Login successful!');
         navigate('/driver');
       }
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Invalid OTP';
-      toast.error(message);
-    },
-  });
-
-  // ============= RESEND OTP =============
-  const resendOTP = useMutation({
-    mutationFn: (phone: string) => authAPI.resendOTP(phone),
-    onSuccess: (response) => {
-      toast.success(response.message || 'OTP resent successfully!');
-    },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to resend OTP';
+      const message = error.response?.data?.message || 'Verification failed';
       toast.error(message);
     },
   });
@@ -142,7 +178,6 @@ export const useAuth = () => {
       toast.success('Logged out successfully');
       navigate('/login');
     },
-    // onError: (error: any) => {
     onError: () => {
       // Even if API call fails, clear local auth
       clearAuth();
@@ -165,18 +200,18 @@ export const useAuth = () => {
     isAuthenticated,
     isLoadingUser,
 
-    // User mutations
+    // User mutations - Firebase
     registerUser,
-    sendLoginOTP,
+    loginWithFirebase,
     verifyUserOTP,
+    loginUser, // Fallback password login
 
-    // Rider mutations
+    // Rider mutations - Firebase
     registerRider,
     loginRider,
     verifyRiderOTP,
 
     // Common
-    resendOTP,
     logout,
     currentUser,
   };

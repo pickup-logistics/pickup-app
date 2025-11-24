@@ -3,59 +3,59 @@ import type {
   LoginCredentials,
   UserRegisterData,
   RiderRegisterData,
-  OTPVerification,
+  FirebaseVerification,
   AuthResponse,
   OTPResponse,
 } from '@/types/auth.types';
 
 export const authAPI = {
-  // ============= USER AUTH =============
+  // ============= USER AUTH WITH FIREBASE =============
   
   /**
-   * Register a new user (rider/passenger)
+   * Register a new user with Firebase token
    */
-  registerUser: async (data: UserRegisterData): Promise<AuthResponse> => {
+  registerUser: async (data: UserRegisterData & { firebaseToken?: string }): Promise<AuthResponse> => {
     console.log('Registering user with data:', data);
     const response = await axios.post('/v1/auth/register', data);
-    return response.data; // Returns { status, message, data: { user, token } }
+    return response.data;
   },
 
   /**
-   * Send OTP for user login
+   * Login with Firebase token
    */
-  sendLoginOTP: async (phone: string): Promise<OTPResponse> => {
-    const response = await axios.post('/v1/auth/send-otp', { phone });
-    return response.data; // Returns { status, message }
+  loginWithFirebase: async (data: FirebaseVerification): Promise<AuthResponse> => {
+    const response = await axios.post('/v1/auth/verify-firebase', data);
+    return response.data;
   },
 
   /**
-   * Verify OTP and complete authentication
+   * Verify Firebase token and complete authentication
    */
-  verifyUserOTP: async (data: OTPVerification): Promise<AuthResponse> => {
-    const response = await axios.post('/v1/auth/verify-otp', data);
-    return response.data; // Returns { status, message, data: { user, token } }
+  verifyUserOTP: async (data: { phone: string; firebaseToken: string }): Promise<AuthResponse> => {
+    const response = await axios.post('/v1/auth/verify-firebase', data);
+    return response.data;
   },
   
   /**
-   * Login with password (alternative to OTP)
+   * Login with password (alternative to Firebase)
    */
   loginUser: async (data: LoginCredentials): Promise<AuthResponse> => {
     const response = await axios.post('/v1/auth/login', data);
-    return response.data; // Returns { status, message, data: { user, token } }
+    return response.data;
   },
 
   // ============= RIDER AUTH =============
 
   /**
-   * Register a new rider (bike rider)
+   * Register a new rider
    */
-  registerRider: async (data: RiderRegisterData): Promise<AuthResponse> => {
+  registerRider: async (data: RiderRegisterData & { firebaseToken?: string }): Promise<AuthResponse> => {
     const response = await axios.post('/v1/rider/register', data);
     return response.data;
   },
 
   /**
-   * Upload rider documents (license, bike photos)
+   * Upload rider documents
    */
   uploadRiderDocuments: async (formData: FormData): Promise<{ status: string; message: string }> => {
     const response = await axios.post('/v1/rider/documents', formData, {
@@ -67,18 +67,18 @@ export const authAPI = {
   },
 
   /**
-   * Send OTP for rider login
+   * Login rider with Firebase
    */
-  loginRider: async (data: LoginCredentials): Promise<OTPResponse> => {
-    const response = await axios.post('/v1/auth/send-otp', data);
+  loginRider: async (data: { phone: string; firebaseToken: string }): Promise<AuthResponse> => {
+    const response = await axios.post('/v1/auth/verify-firebase', data);
     return response.data;
   },
 
   /**
-   * Verify OTP for rider and complete authentication
+   * Verify Firebase token for rider
    */
-  verifyRiderOTP: async (data: OTPVerification): Promise<AuthResponse> => {
-    const response = await axios.post('/v1/auth/verify-otp', data);
+  verifyRiderOTP: async (data: { phone: string; firebaseToken: string }): Promise<AuthResponse> => {
+    const response = await axios.post('/v1/auth/verify-firebase', data);
     return response.data;
   },
 
@@ -109,11 +109,5 @@ export const authAPI = {
     return response.data;
   },
 
-  /**
-   * Resend OTP
-   */
-  resendOTP: async (phone: string): Promise<OTPResponse> => {
-    const response = await axios.post('/v1/auth/send-otp', { phone });
-    return response.data;
-  },
+  // Note: resendOTP not needed with Firebase as it's handled client-side
 };

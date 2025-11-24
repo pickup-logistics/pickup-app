@@ -40,18 +40,19 @@ axiosInstance.interceptors.response.use(
       try {
         // Try to refresh token
         const refreshToken = localStorage.getItem('refresh-token');
-        
+
         if (refreshToken) {
           const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL}/auth/refresh`,
+            `${import.meta.env.VITE_API_BASE_URL}/v1/auth/refresh`,
             { refreshToken }
           );
 
-          const { token } = response.data;
-          localStorage.setItem('auth-token', token);
+          const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+          localStorage.setItem('auth-token', accessToken);
+          localStorage.setItem('refresh-token', newRefreshToken);
 
           // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return axiosInstance(originalRequest);
         }
       } catch (refreshError) {

@@ -4,8 +4,8 @@ import { useAuth } from '../hooks/useAuth';
 import { PhoneInput } from '@/components/common/PhoneInput';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
-import { OTPVerification } from '../components';
-import { Bike, User, Mail } from 'lucide-react';
+import { Bike, User, Mail, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -14,8 +14,7 @@ export const Register: React.FC = () => {
     email: '',
     password: '',
   });
-  const [showOTP, setShowOTP] = useState(false);
-  const { registerUser, verifyUserOTP, resendOTP } = useAuth();
+  const { registerUser } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -27,35 +26,37 @@ export const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData.name || !formData.phone || !formData.email || !formData.password) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
     try {
-      const response = await registerUser.mutateAsync(formData);
-      
-      // Check if backend returned token (auto-login) or requires OTP
-      if (response.data?.token) {
-        // Already logged in, navigation handled in mutation
-      } else {
-        // Need to verify OTP
-        setShowOTP(true);
+      // Ensure phone is in correct format (+234XXXXXXXXXX)
+      let formattedPhone = formData.phone;
+      if (!formattedPhone.startsWith('+')) {
+        // Remove leading 0 if present
+        if (formattedPhone.startsWith('0')) {
+          formattedPhone = formattedPhone.substring(1);
+        }
+        formattedPhone = '+234' + formattedPhone;
       }
-    } catch (error) {
-      // Error is handled by the mutation
-    }
-  };
 
-  const handleOTPVerify = async (otp: string) => {
-    try {
-      await verifyUserOTP.mutateAsync({ phone: formData.phone, otp });
+      // Register user directly with backend
+      await registerUser.mutateAsync({
+        ...formData,
+        phone: formattedPhone,
+      });
+
       // Navigation is handled in the mutation
-    } catch (error) {
-      // Error is handled by the mutation
-    }
-  };
-
-  const handleResendOTP = async () => {
-    try {
-      await resendOTP.mutateAsync(formData.phone);
-    } catch (error) {
-      // Error is handled by the mutation
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      // Error handling is done in the mutation
     }
   };
 
@@ -73,104 +74,95 @@ export const Register: React.FC = () => {
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          {!showOTP ? (
-            <>
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Sign Up
-                </h2>
-                <p className="text-gray-600">
-                  Join thousands of riders using PickUp
-                </p>
-              </div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Sign Up
+            </h2>
+            <p className="text-gray-600">
+              Join thousands of riders using PickUp
+            </p>
+          </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <Input
-                  name="name"
-                  label="Full Name"
-                  placeholder="John Doe"
-                  value={formData.name}
-                  onChange={handleChange}
-                  leftIcon={<User size={18} className="text-gray-400" />}
-                  required
-                />
-
-                <PhoneInput
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                />
-
-                <Input
-                  name="email"
-                  type="email"
-                  label="Email (Optional)"
-                  placeholder="john@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  leftIcon={<Mail size={18} className="text-gray-400" />}
-                />
-
-                <Input
-                  name="password"
-                  type="password"
-                  label="Password"
-                  placeholder="At least 6 characters"
-                  value={formData.password}
-                  onChange={handleChange}
-                  helperText="Minimum 6 characters"
-                  required
-                />
-
-                <div className="pt-2">
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="lg"
-                    fullWidth
-                    isLoading={registerUser.isPending}
-                  >
-                    Create Account
-                  </Button>
-                </div>
-              </form>
-
-              <div className="mt-6 text-center space-y-3">
-                <p className="text-sm text-gray-600">
-                  Already have an account?{' '}
-                  <Link
-                    to="/login"
-                    className="text-primary-600 hover:text-primary-700 font-medium"
-                  >
-                    Sign in
-                  </Link>
-                </p>
-
-                <p className="text-sm text-gray-600">
-                  Want to become a rider?{' '}
-                  <Link
-                    to="/driver/register"
-                    className="text-primary-600 hover:text-primary-700 font-medium"
-                  >
-                    Register here
-                  </Link>
-                </p>
-              </div>
-            </>
-          ) : (
-            <OTPVerification
-              phone={formData.phone}
-              onVerify={handleOTPVerify}
-              onResend={handleResendOTP}
-              isLoading={verifyUserOTP.isPending}
-              error={
-                verifyUserOTP.isError
-                  ? 'Invalid OTP. Please try again.'
-                  : undefined
-              }
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              name="name"
+              label="Full Name"
+              placeholder="John Doe"
+              value={formData.name}
+              onChange={handleChange}
+              leftIcon={<User size={18} className="text-gray-400" />}
+              required
+              disabled={registerUser.isPending}
             />
-          )}
+
+            <Input
+              name="email"
+              type="email"
+              label="Email"
+              placeholder="john@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              leftIcon={<Mail size={18} className="text-gray-400" />}
+              required
+              disabled={registerUser.isPending}
+            />
+
+            <PhoneInput
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              required
+              disabled={registerUser.isPending}
+              placeholder="803 456 7890"
+            />
+
+            <Input
+              name="password"
+              type="password"
+              label="Password"
+              placeholder="At least 6 characters"
+              value={formData.password}
+              onChange={handleChange}
+              leftIcon={<Lock size={18} className="text-gray-400" />}
+              helperText="Minimum 6 characters"
+              required
+              disabled={registerUser.isPending}
+            />
+
+            <div className="pt-2">
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                fullWidth
+                isLoading={registerUser.isPending}
+              >
+                Create Account
+              </Button>
+            </div>
+          </form>
+
+          <div className="mt-6 text-center space-y-3">
+            <p className="text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
+                Sign in
+              </Link>
+            </p>
+
+            <p className="text-sm text-gray-600">
+              Want to become a rider?{' '}
+              <Link
+                to="/driver/register"
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
+                Register here
+              </Link>
+            </p>
+          </div>
         </div>
 
         {/* Footer */}

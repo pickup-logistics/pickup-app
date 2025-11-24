@@ -1,30 +1,56 @@
 import { PrismaClient, User, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { generateTokens } from '../utils/jwt.util';
-import { sendOTP, verifyOTP } from '../utils/otp.util';
+import { firebaseAuth } from '../config/firebase.config';
 
 const prisma = new PrismaClient();
 
 export interface RegisterUserData {
   phone: string;
   name: string;
-  email?: string;
-  password?: string;
+  email: string;
+  password: string;
   role?: UserRole;
+  firebaseToken?: string; // Add Firebase token
 }
 
 export interface LoginData {
-  phone: string;
+  email?: string;
+  phone?: string;
   password?: string;
+  firebaseToken?: string; // Add Firebase token
 }
+
+/**
+ * Verify Firebase token and extract phone number
+ */
+export const verifyFirebaseToken = async (token: string) => {
+  try {
+    const decodedToken = await firebaseAuth.verifyIdToken(token);
+    return {
+      phoneNumber: decodedToken.phone_number,
+      uid: decodedToken.uid,
+    };
+  } catch (error) {
+    throw new Error('Invalid Firebase token');
+  }
+};
 
 /**
  * Register new user
  */
 export const registerUser = async (data: RegisterUserData) => {
-  const { phone, name, email, password, role = UserRole.USER } = data;
+  const { phone, name, email, password, role = UserRole.USER, firebaseToken } = data;
 
-  // Check if user already exists
+  // Verify Firebase token if provided (optional for now)
+  if (firebaseToken) {
+    const firebaseData = await verifyFirebaseToken(firebaseToken);
+    if (firebaseData.phoneNumber !== phone) {
+      throw new Error('Phone number mismatch');
+    }
+  }
+
+  // Check if user already exists by phone
   const existingUser = await prisma.user.findUnique({
     where: { phone },
   });
@@ -33,22 +59,17 @@ export const registerUser = async (data: RegisterUserData) => {
     throw new Error('User with this phone number already exists');
   }
 
-  // Check email if provided
-  if (email) {
-    const existingEmail = await prisma.user.findUnique({
-      where: { email },
-    });
+  // Check if email already exists
+  const existingEmail = await prisma.user.findUnique({
+    where: { email },
+  });
 
-    if (existingEmail) {
-      throw new Error('User with this email already exists');
-    }
+  if (existingEmail) {
+    throw new Error('User with this email already exists');
   }
 
-  // Hash password if provided
-  let hashedPassword: string | undefined;
-  if (password) {
-    hashedPassword = await bcrypt.hash(password, 10);
-  }
+  // Hash password
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   // Create user
   const user = await prisma.user.create({
@@ -59,6 +80,7 @@ export const registerUser = async (data: RegisterUserData) => {
       password: hashedPassword,
       role,
       status: 'ACTIVE',
+      isPhoneVerified: !!firebaseToken, // Mark as verified if Firebase token provided
     },
     select: {
       id: true,
@@ -83,10 +105,16 @@ export const registerUser = async (data: RegisterUserData) => {
 };
 
 /**
- * Login user with phone and password
+ * Login user with Firebase token
  */
-export const loginUser = async (data: LoginData) => {
-  const { phone, password } = data;
+export const loginWithFirebase = async (firebaseToken: string) => {
+  // Verify Firebase token
+  const firebaseData = await verifyFirebaseToken(firebaseToken);
+  const phone = firebaseData.phoneNumber;
+
+  if (!phone) {
+    throw new Error('Phone number not found in Firebase token');
+  }
 
   // Find user
   const user = await prisma.user.findUnique({
@@ -94,7 +122,7 @@ export const loginUser = async (data: LoginData) => {
   });
 
   if (!user) {
-    throw new Error('Invalid phone number or password');
+    throw new Error('User not found. Please register first.');
   }
 
   // Check if user is active
@@ -102,23 +130,13 @@ export const loginUser = async (data: LoginData) => {
     throw new Error('Your account has been suspended. Please contact support.');
   }
 
-  // Verify password if provided
-  if (password) {
-    if (!user.password) {
-      throw new Error('Password not set. Please use OTP login.');
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      throw new Error('Invalid phone number or password');
-    }
-  }
-
-  // Update last login
+  // Update last login and mark phone as verified
   await prisma.user.update({
     where: { id: user.id },
-    data: { lastLoginAt: new Date() },
+    data: {
+      lastLoginAt: new Date(),
+      isPhoneVerified: true,
+    },
   });
 
   // Generate tokens
@@ -134,59 +152,59 @@ export const loginUser = async (data: LoginData) => {
 };
 
 /**
- * Send OTP for phone verification
+ * Login user with email/phone and password (fallback)
  */
-export const sendLoginOTP = async (phone: string) => {
-  // Check if user exists (optional - you can create user on OTP verify instead)
-  const user = await prisma.user.findUnique({
-    where: { phone },
-  });
+export const loginUser = async (data: LoginData) => {
+  const { email, phone, password, firebaseToken } = data;
 
-  if (!user) {
-    throw new Error('User not found. Please register first.');
+  // If Firebase token provided, use Firebase login
+  if (firebaseToken) {
+    return loginWithFirebase(firebaseToken);
   }
 
+  // Otherwise, use password login
+  if (!password) {
+    throw new Error('Password or Firebase token required');
+  }
+
+  // Find user by email or phone
+  let user;
+  if (email) {
+    user = await prisma.user.findUnique({
+      where: { email },
+    });
+  } else if (phone) {
+    user = await prisma.user.findUnique({
+      where: { phone },
+    });
+  } else {
+    throw new Error('Email or phone number required');
+  }
+
+  if (!user) {
+    throw new Error('Invalid credentials');
+  }
+
+  // Check if user is active
   if (user.status !== 'ACTIVE') {
     throw new Error('Your account has been suspended. Please contact support.');
   }
 
-  // Send OTP
-  const result = await sendOTP(phone);
-
-  if (!result.success) {
-    throw new Error(result.message);
+  // Verify password
+  if (!user.password) {
+    throw new Error('Password not set. Please use phone authentication.');
   }
 
-  return result;
-};
+  const isPasswordValid = await bcrypt.compare(password, user.password);
 
-/**
- * Verify OTP and login
- */
-export const verifyLoginOTP = async (phone: string, otp: string) => {
-  // Verify OTP
-  const otpResult = verifyOTP(phone, otp);
-
-  if (!otpResult.valid) {
-    throw new Error(otpResult.message);
+  if (!isPasswordValid) {
+    throw new Error('Invalid credentials');
   }
 
-  // Find user
-  const user = await prisma.user.findUnique({
-    where: { phone },
-  });
-
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  // Mark phone as verified
+  // Update last login
   await prisma.user.update({
     where: { id: user.id },
-    data: {
-      isPhoneVerified: true,
-      lastLoginAt: new Date(),
-    },
+    data: { lastLoginAt: new Date() },
   });
 
   // Generate tokens

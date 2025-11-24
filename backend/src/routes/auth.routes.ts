@@ -8,17 +8,18 @@ const router = Router();
  * Public routes (no authentication required)
  */
 
-// Register new user
+// Register new user (with Firebase token)
 router.post('/register', authController.register);
 
-// Login with password
+// Login with password (fallback/alternative method)
 router.post('/login', authController.login);
 
-// Send OTP for login
-router.post('/send-otp', authController.sendOTP);
+// Verify Firebase token and login (primary method)
+router.post('/verify-firebase', authController.verifyFirebase);
 
-// Verify OTP and login
-router.post('/verify-otp', authController.verifyOTP);
+// Legacy OTP routes (can be removed if fully migrating to Firebase)
+// router.post('/send-otp', authController.sendOTP);
+// router.post('/verify-otp', authController.verifyOTP);
 
 // Refresh access token
 router.post('/refresh', authController.refresh);

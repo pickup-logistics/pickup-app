@@ -1,43 +1,44 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { PhoneInput } from '@/components/common/PhoneInput';
+import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
-import { OTPVerification } from '../components';
-import { Bike } from 'lucide-react';
+import { Bike, Mail, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export const Login: React.FC = () => {
-  const [phone, setPhone] = useState('');
-  const [showOTP, setShowOTP] = useState(false);
-  const { sendLoginOTP, verifyUserOTP, resendOTP } = useAuth();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const { loginUser } = useAuth();
 
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!phone) return;
 
-    try {
-      await sendLoginOTP.mutateAsync(phone);
-      setShowOTP(true);
-    } catch (error) {
-      // Error is handled by the mutation
+    if (!formData.email || !formData.password) {
+      toast.error('Please enter your email and password');
+      return;
     }
-  };
 
-  const handleOTPVerify = async (otp: string) => {
     try {
-      await verifyUserOTP.mutateAsync({ phone, otp });
+      // Login with email and password
+      await loginUser.mutateAsync({
+        email: formData.email,
+        password: formData.password,
+      });
+
       // Navigation is handled in the mutation
-    } catch (error) {
-      // Error is handled by the mutation
-    }
-  };
-
-  const handleResendOTP = async () => {
-    try {
-      await resendOTP.mutateAsync(phone);
-    } catch (error) {
-      // Error is handled by the mutation
+    } catch (error: any) {
+      console.error('Login error:', error);
+      // Error handling is done in the mutation
     }
   };
 
@@ -55,71 +56,74 @@ export const Login: React.FC = () => {
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          {!showOTP ? (
-            <>
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Welcome Back
-                </h2>
-                <p className="text-gray-600">
-                  Enter your phone number to continue
-                </p>
-              </div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Welcome Back
+            </h2>
+            <p className="text-gray-600">
+              Sign in to your account
+            </p>
+          </div>
 
-              <form onSubmit={handlePhoneSubmit} className="space-y-6">
-                <PhoneInput
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="803 456 7890"
-                  required
-                />
-
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  fullWidth
-                  isLoading={sendLoginOTP.isPending}
-                >
-                  Continue
-                </Button>
-              </form>
-
-              <div className="mt-6 text-center space-y-3">
-                <p className="text-sm text-gray-600">
-                  Don't have an account?{' '}
-                  <Link
-                    to="/register"
-                    className="text-primary-600 hover:text-primary-700 font-medium"
-                  >
-                    Sign up
-                  </Link>
-                </p>
-                
-                <p className="text-sm text-gray-600">
-                  Are you a bike rider?{' '}
-                  <Link
-                    to="/driver/login"
-                    className="text-primary-600 hover:text-primary-700 font-medium"
-                  >
-                    Login here
-                  </Link>
-                </p>
-              </div>
-            </>
-          ) : (
-            <OTPVerification
-              phone={phone}
-              onVerify={handleOTPVerify}
-              onResend={handleResendOTP}
-              isLoading={verifyUserOTP.isPending}
-              error={
-                verifyUserOTP.isError
-                  ? 'Invalid OTP. Please try again.'
-                  : undefined
-              }
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              name="email"
+              type="email"
+              label="Email"
+              placeholder="john@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              leftIcon={<Mail size={18} className="text-gray-400" />}
+              required
+              disabled={loginUser.isPending}
             />
-          )}
+
+            <Input
+              name="password"
+              type="password"
+              label="Password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
+              leftIcon={<Lock size={18} className="text-gray-400" />}
+              required
+              disabled={loginUser.isPending}
+            />
+
+            <div className="pt-2">
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                fullWidth
+                isLoading={loginUser.isPending}
+              >
+                Sign In
+              </Button>
+            </div>
+          </form>
+
+          <div className="mt-6 text-center space-y-3">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <Link
+                to="/register"
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
+                Sign up
+              </Link>
+            </p>
+
+            <p className="text-sm text-gray-600">
+              Are you a bike rider?{' '}
+              <Link
+                to="/driver/login"
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
+                Login here
+              </Link>
+            </p>
+          </div>
         </div>
 
         {/* Footer */}

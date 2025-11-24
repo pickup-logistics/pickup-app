@@ -6,36 +6,47 @@ import { Toaster } from 'react-hot-toast';
 import { Login } from '@/features/auth/pages/Login';
 import { Register } from '@/features/auth/pages/Register';
 
+// Layouts
+import { MainLayout } from '@/layouts/MainLayout';
+import { DriverLayout } from '@/layouts/DriverLayout';
+import { AdminLayout } from '@/layouts/AdminLayout';
+
 // Route Guards
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { RoleRoute } from '@/routes/RoleRoute';
 
 // Placeholder pages (to be created)
 const HomePage = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome to PickUp</h1>
-      <p className="text-gray-600">User Home Page - Coming Soon</p>
+  <MainLayout>
+    <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome to PickUp</h1>
+        <p className="text-gray-600">User Home Page - Coming Soon</p>
+      </div>
     </div>
-  </div>
+  </MainLayout>
 );
 
 const DriverHome = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <h1 className="text-4xl font-bold text-gray-900 mb-4">Driver Dashboard</h1>
-      <p className="text-gray-600">Driver Home Page - Coming Soon</p>
+  <DriverLayout>
+    <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Rider Dashboard</h1>
+        <p className="text-gray-600">Rider Home Page - Coming Soon</p>
+      </div>
     </div>
-  </div>
+  </DriverLayout>
 );
 
 const AdminDashboard = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <h1 className="text-4xl font-bold text-gray-900 mb-4">Admin Dashboard</h1>
-      <p className="text-gray-600">Admin Page - Coming Soon</p>
+  <AdminLayout>
+    <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Admin Dashboard</h1>
+        <p className="text-gray-600">Admin Page - Coming Soon</p>
+      </div>
     </div>
-  </div>
+  </AdminLayout>
 );
 
 // Create a client

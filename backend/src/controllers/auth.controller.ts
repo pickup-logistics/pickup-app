@@ -19,15 +19,18 @@ export const register = async (req: Request, res: Response) => {
       .withMessage('Name must be between 2 and 100 characters')
       .run(req);
     await body('email')
-      .optional()
       .isEmail()
       .normalizeEmail()
       .withMessage('Invalid email address')
       .run(req);
     await body('password')
-      .optional()
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters')
+      .run(req);
+    await body('firebaseToken')
+      .optional()
+      .isString()
+      .withMessage('Firebase token must be a string')
       .run(req);
 
     const errors = validationResult(req);
@@ -39,13 +42,14 @@ export const register = async (req: Request, res: Response) => {
       });
     }
 
-    const { phone, name, email, password } = req.body;
+    const { phone, name, email, password, firebaseToken } = req.body;
 
     const result = await authService.registerUser({
       phone,
       name,
       email,
       password,
+      firebaseToken,
     });
 
     return res.status(201).json({
@@ -63,19 +67,32 @@ export const register = async (req: Request, res: Response) => {
 };
 
 /**
- * Login with phone and password
+ * Login with Firebase token or password
  * POST /api/v1/auth/login
  */
 export const login = async (req: Request, res: Response) => {
   try {
-    // Validate request
+    // Validate request - accept either email or phone
+    await body('email')
+      .optional()
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Invalid email address')
+      .run(req);
     await body('phone')
+      .optional()
       .matches(/^\+234[0-9]{10}$/)
       .withMessage('Invalid Nigerian phone number format')
       .run(req);
     await body('password')
+      .optional()
       .notEmpty()
       .withMessage('Password is required')
+      .run(req);
+    await body('firebaseToken')
+      .optional()
+      .isString()
+      .withMessage('Firebase token must be a string')
       .run(req);
 
     const errors = validationResult(req);
@@ -87,9 +104,17 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    const { phone, password } = req.body;
+    const { email, phone, password, firebaseToken } = req.body;
 
-    const result = await authService.loginUser({ phone, password });
+    // Require either email or phone
+    if (!email && !phone) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Email or phone number required',
+      });
+    }
+
+    const result = await authService.loginUser({ email, phone, password, firebaseToken });
 
     return res.status(200).json({
       status: 'success',
@@ -106,15 +131,14 @@ export const login = async (req: Request, res: Response) => {
 };
 
 /**
- * Send OTP for login
- * POST /api/v1/auth/send-otp
+ * Verify Firebase token and login
+ * POST /api/v1/auth/verify-firebase
  */
-export const sendOTP = async (req: Request, res: Response) => {
+export const verifyFirebase = async (req: Request, res: Response) => {
   try {
-    // Validate request
-    await body('phone')
-      .matches(/^\+234[0-9]{10}$/)
-      .withMessage('Invalid Nigerian phone number format')
+    await body('firebaseToken')
+      .notEmpty()
+      .withMessage('Firebase token is required')
       .run(req);
 
     const errors = validationResult(req);
@@ -126,63 +150,20 @@ export const sendOTP = async (req: Request, res: Response) => {
       });
     }
 
-    const { phone } = req.body;
+    const { firebaseToken } = req.body;
 
-    const result = await authService.sendLoginOTP(phone);
-
-    return res.status(200).json({
-      status: 'success',
-      message: result.message,
-    });
-  } catch (error: any) {
-    console.error('Send OTP error:', error);
-    return res.status(400).json({
-      status: 'error',
-      message: error.message || 'Failed to send OTP',
-    });
-  }
-};
-
-/**
- * Verify OTP and login
- * POST /api/v1/auth/verify-otp
- */
-export const verifyOTP = async (req: Request, res: Response) => {
-  try {
-    // Validate request
-    await body('phone')
-      .matches(/^\+234[0-9]{10}$/)
-      .withMessage('Invalid Nigerian phone number format')
-      .run(req);
-    await body('otp')
-      .isLength({ min: 6, max: 6 })
-      .isNumeric()
-      .withMessage('OTP must be a 6-digit number')
-      .run(req);
-
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Validation failed',
-        errors: errors.array(),
-      });
-    }
-
-    const { phone, otp } = req.body;
-
-    const result = await authService.verifyLoginOTP(phone, otp);
+    const result = await authService.loginWithFirebase(firebaseToken);
 
     return res.status(200).json({
       status: 'success',
-      message: 'OTP verified successfully',
+      message: 'Login successful',
       data: result,
     });
   } catch (error: any) {
-    console.error('Verify OTP error:', error);
-    return res.status(400).json({
+    console.error('Firebase verification error:', error);
+    return res.status(401).json({
       status: 'error',
-      message: error.message || 'OTP verification failed',
+      message: error.message || 'Firebase verification failed',
     });
   }
 };
@@ -193,7 +174,6 @@ export const verifyOTP = async (req: Request, res: Response) => {
  */
 export const refresh = async (req: Request, res: Response) => {
   try {
-    // Validate request
     await body('refreshToken')
       .notEmpty()
       .withMessage('Refresh token is required')
@@ -267,7 +247,6 @@ export const updateProfile = async (req: Request, res: Response) => {
       });
     }
 
-    // Validate allowed fields
     const allowedFields = ['name', 'email', 'avatar', 'dateOfBirth', 'gender', 'address'];
     const updates = Object.keys(req.body)
       .filter((key) => allowedFields.includes(key))
@@ -305,7 +284,6 @@ export const changePassword = async (req: Request, res: Response) => {
       });
     }
 
-    // Validate request
     await body('oldPassword')
       .notEmpty()
       .withMessage('Current password is required')
@@ -342,14 +320,10 @@ export const changePassword = async (req: Request, res: Response) => {
 };
 
 /**
- * Logout (client-side token removal)
+ * Logout
  * POST /api/v1/auth/logout
  */
 export const logout = async (req: Request, res: Response) => {
-  // In a stateless JWT system, logout is handled client-side
-  // The client should remove the tokens from storage
-  // Optionally, implement token blacklisting here
-
   return res.status(200).json({
     status: 'success',
     message: 'Logged out successfully',
