@@ -86,7 +86,10 @@ export function MapView({ height = '100%', onMapClick }: MapViewProps) {
 
   return (
     <div style={{ height, width: '100%' }}>
-      <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+      <APIProvider
+        apiKey={GOOGLE_MAPS_API_KEY}
+        libraries={['places', 'geocoding']}
+      >
         <Map
           center={center}
           zoom={15}

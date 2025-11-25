@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings } from 'lucide-react';
+import { Settings, Loader2 } from 'lucide-react';
 import { MapView } from '@/components/map/MapView';
 import { LocationSearch } from '@/features/rider/components/LocationSearch';
 import { PreviousDestinations } from '@/features/rider/components/PreviousDestinations';
@@ -8,13 +8,54 @@ import { SettingsSidebar } from '@/components/common/SettingsSidebar';
 import { useLocationStore } from '@/store/locationStore';
 import { useRideStore } from '@/store/rideStore';
 import { Location } from '@/types/ride.types';
+import { getCurrentLocation } from '@/services/location.service';
+
+// Bottom sheet snap positions
+const SNAP_POSITIONS = {
+  COLLAPSED: 280,  // Minimal height showing just input fields
+  HALF: 450,       // Half screen
+  FULL: 0.7,       // 70% of screen height (will be calculated)
+};
 
 export function RiderHome() {
   const navigate = useNavigate();
-  const { dropoffLocation } = useLocationStore();
+  const { pickupLocation, dropoffLocation, setPickupLocation, setCurrentLocation } = useLocationStore();
   const { setPreviousDestinations } = useRideStore();
-  const [showBottomSheet] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isManualPickup, setIsManualPickup] = useState(false);
+
+  // Bottom sheet drag state
+  const [sheetHeight, setSheetHeight] = useState(SNAP_POSITIONS.HALF);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startY, setStartY] = useState(0);
+  const [startHeight, setStartHeight] = useState(0);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const maxHeight = typeof window !== 'undefined' ? window.innerHeight * (SNAP_POSITIONS.FULL as number) : 500;
+
+  // Get current location on mount
+  useEffect(() => {
+    const fetchCurrentLocation = async () => {
+      setIsLoadingLocation(true);
+      setLocationError(null);
+
+      const result = await getCurrentLocation();
+
+      if (result.success && result.location) {
+        setCurrentLocation(result.location);
+        setPickupLocation(result.location);
+        setLocationError(null);
+      } else {
+        setLocationError(result.error || 'Unable to get your location');
+        setIsManualPickup(true);
+      }
+
+      setIsLoadingLocation(false);
+    };
+
+    fetchCurrentLocation();
+  }, [setCurrentLocation, setPickupLocation]);
 
   useEffect(() => {
     // Load previous destinations from localStorage or API
@@ -29,10 +70,13 @@ export function RiderHome() {
     }
   }, [setPreviousDestinations]);
 
-  const handleLocationSelect = (location: Location) => {
-    console.log('Selected location:', location);
-    // Here you could navigate to booking page or show fare estimate
-    // navigate('/ride/book');
+  const handlePickupLocationSelect = (location: Location) => {
+    console.log('Selected pickup location:', location);
+    setPickupLocation(location);
+  };
+
+  const handleDropoffLocationSelect = (location: Location) => {
+    console.log('Selected dropoff location:', location);
   };
 
   const handleOpenSettings = () => {
@@ -42,6 +86,92 @@ export function RiderHome() {
   const handleCloseSettings = () => {
     setShowSettings(false);
   };
+
+  // Drag handlers for bottom sheet
+  const handleDragStart = (clientY: number) => {
+    setIsDragging(true);
+    setStartY(clientY);
+    setStartHeight(sheetHeight);
+  };
+
+  const handleDragMove = (clientY: number) => {
+    if (!isDragging) return;
+
+    const deltaY = startY - clientY;
+    const newHeight = startHeight + deltaY;
+
+    // Constrain height between collapsed and max
+    const constrainedHeight = Math.max(
+      SNAP_POSITIONS.COLLAPSED,
+      Math.min(maxHeight, newHeight)
+    );
+
+    setSheetHeight(constrainedHeight);
+  };
+
+  const handleDragEnd = () => {
+    if (!isDragging) return;
+
+    setIsDragging(false);
+
+    // Snap to nearest position
+    const snapPositions = [
+      SNAP_POSITIONS.COLLAPSED,
+      SNAP_POSITIONS.HALF,
+      maxHeight,
+    ];
+
+    const nearest = snapPositions.reduce((prev, curr) => {
+      return Math.abs(curr - sheetHeight) < Math.abs(prev - sheetHeight)
+        ? curr
+        : prev;
+    });
+
+    setSheetHeight(nearest);
+  };
+
+  // Mouse events
+  const handleMouseDown = (e: React.MouseEvent) => {
+    handleDragStart(e.clientY);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    handleDragMove(e.clientY);
+  };
+
+  const handleMouseUp = () => {
+    handleDragEnd();
+  };
+
+  // Touch events
+  const handleTouchStart = (e: React.TouchEvent) => {
+    handleDragStart(e.touches[0].clientY);
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    handleDragMove(e.touches[0].clientY);
+  };
+
+  const handleTouchEnd = () => {
+    handleDragEnd();
+  };
+
+  // Add/remove event listeners for drag
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('touchmove', handleTouchMove);
+      window.addEventListener('touchend', handleTouchEnd);
+
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', handleTouchEnd);
+      };
+    }
+  }, [isDragging, startY, startHeight, sheetHeight]);
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gray-100">
@@ -61,41 +191,97 @@ export function RiderHome() {
 
       {/* Bottom Sheet */}
       <div
-        className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 z-20 ${
-          showBottomSheet ? 'translate-y-0' : 'translate-y-full'
-        }`}
+        ref={sheetRef}
+        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-20 flex flex-col"
         style={{
-          maxHeight: '70vh',
-          overflowY: 'auto',
+          height: `${sheetHeight}px`,
+          maxHeight: `${maxHeight}px`,
+          transition: isDragging ? 'none' : 'height 0.3s ease-out',
         }}
       >
         {/* Drag Handle */}
-        <div className="flex justify-center pt-3 pb-2">
+        <div
+          className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+        >
           <div className="w-12 h-1 bg-gray-300 rounded-full" />
         </div>
 
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto"  style={{ overflowY: 'auto' }}>
+
         {/* Search Section */}
-        <div className="px-4 py-4">
-          <LocationSearch
-            placeholder="Where to?"
-            onLocationSelect={handleLocationSelect}
-          />
+        <div className="px-4 py-4 space-y-3">
+          {/* From/Pickup Location */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-2 ml-1">
+              From
+            </label>
+            {isLoadingLocation ? (
+              <div className="flex items-center gap-3 bg-white rounded-lg shadow-lg p-4 border border-gray-200">
+                <Loader2 className="w-5 h-5 text-primary-600 animate-spin" />
+                <span className="flex-1 text-lg font-medium text-gray-400">
+                  Getting your location...
+                </span>
+              </div>
+            ) : (
+              <LocationSearch
+                type="pickup"
+                placeholder={
+                  locationError
+                    ? 'Enter pickup location'
+                    : pickupLocation?.address || 'Current location'
+                }
+                value={pickupLocation?.address}
+                onLocationSelect={handlePickupLocationSelect}
+                disabled={!isManualPickup && !locationError}
+                showSuggestions={isManualPickup || !!locationError}
+              />
+            )}
+            {locationError && (
+              <div className="mt-2 ml-1">
+                <p className="text-xs text-red-600">{locationError}</p>
+                <button
+                  onClick={() => setIsManualPickup(true)}
+                  className="text-xs text-primary-600 hover:text-primary-700 font-medium mt-1"
+                >
+                  Enter location manually
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* To/Dropoff Location */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-2 ml-1">
+              Where to?
+            </label>
+            <LocationSearch
+              type="dropoff"
+              placeholder="Enter destination"
+              onLocationSelect={handleDropoffLocationSelect}
+            />
+          </div>
         </div>
 
         {/* Previous Destinations */}
-        <PreviousDestinations onSelectDestination={handleLocationSelect} />
+        <PreviousDestinations onSelectDestination={handleDropoffLocationSelect} />
 
-        {/* Action Button - shown when destination is selected */}
-        {dropoffLocation && (
-          <div className="px-4 py-4 border-t border-gray-200">
-            <button
-              onClick={() => navigate('/ride/book')}
-              className="w-full bg-primary-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-primary-700 transition-colors"
-            >
-              Continue
-            </button>
-          </div>
-        )}
+        {/* Action Button - always visible, disabled when locations not complete */}
+        <div className="px-4 py-4 border-t border-gray-200">
+          <button
+            onClick={() => navigate('/ride/book')}
+            disabled={!pickupLocation || !dropoffLocation}
+            className={`w-full py-4 rounded-lg font-semibold text-lg transition-colors ${
+              pickupLocation && dropoffLocation
+                ? 'bg-primary-600 text-white hover:bg-primary-700 cursor-pointer'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            Continue
+          </button>
+        </div>
 
         {/* Quick Actions */}
         <div className="px-4 pb-6">
@@ -118,7 +304,10 @@ export function RiderHome() {
             </button>
           </div>
         </div>
+        </div>
+        {/* End of scrollable content */}
       </div>
+      {/* End of bottom sheet */}
     </div>
   );
 }
