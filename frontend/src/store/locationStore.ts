@@ -9,6 +9,7 @@ interface LocationState {
   setPickupLocation: (location: Location | null) => void;
   setDropoffLocation: (location: Location | null) => void;
   clearLocations: () => void;
+  clearAllLocations: () => void;
 }
 
 export const useLocationStore = create<LocationState>((set) => ({
@@ -19,6 +20,11 @@ export const useLocationStore = create<LocationState>((set) => ({
   setPickupLocation: (location) => set({ pickupLocation: location }),
   setDropoffLocation: (location) => set({ dropoffLocation: location }),
   clearLocations: () => set({
+    pickupLocation: null,
+    dropoffLocation: null
+  }),
+  clearAllLocations: () => set({
+    currentLocation: null,
     pickupLocation: null,
     dropoffLocation: null
   }),

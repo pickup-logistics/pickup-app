@@ -54,15 +54,20 @@ export async function getCurrentLocation(): Promise<GeolocationResult> {
 
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = 'Location permission denied. Please enable location access.';
+            errorMessage = 'Location permission denied';
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable.';
+            errorMessage = 'Location information is unavailable';
             break;
           case error.TIMEOUT:
-            errorMessage = 'Location request timed out.';
+            errorMessage = 'Location request timed out';
             break;
         }
+
+        console.error('Geolocation error:', {
+          code: error.code,
+          message: error.message,
+        });
 
         resolve({
           success: false,
@@ -70,9 +75,9 @@ export async function getCurrentLocation(): Promise<GeolocationResult> {
         });
       },
       {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+        enableHighAccuracy: false, // Changed to false for faster response
+        timeout: 15000, // Increased timeout to 15 seconds
+        maximumAge: 5000, // Allow cached location within 5 seconds
       }
     );
   });

@@ -9,6 +9,7 @@ interface RideState {
   addToHistory: (ride: Ride) => void;
   setPreviousDestinations: (destinations: PreviousDestination[]) => void;
   addPreviousDestination: (destination: PreviousDestination) => void;
+  clearRideData: () => void;
 }
 
 export const useRideStore = create<RideState>((set) => ({
@@ -23,4 +24,9 @@ export const useRideStore = create<RideState>((set) => ({
   addPreviousDestination: (destination) => set((state) => ({
     previousDestinations: [destination, ...state.previousDestinations]
   })),
+  clearRideData: () => set({
+    currentRide: null,
+    rideHistory: [],
+    previousDestinations: []
+  }),
 }));
