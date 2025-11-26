@@ -2,6 +2,8 @@ import { PrismaClient, User, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { generateTokens } from '../utils/jwt.util';
 import { firebaseAuth } from '../config/firebase.config';
+import { monnifyService } from './monnify.service';
+import { createWallet } from './wallet.service';
 
 const prisma = new PrismaClient();
 
@@ -71,6 +73,9 @@ export const registerUser = async (data: RegisterUserData) => {
   // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  // Reserve bank account
+  const accountDetails = await monnifyService.reserveAccount(name, email);
+
   // Create user
   const user = await prisma.user.create({
     data: {
@@ -81,6 +86,13 @@ export const registerUser = async (data: RegisterUserData) => {
       role,
       status: 'ACTIVE',
       isPhoneVerified: !!firebaseToken, // Mark as verified if Firebase token provided
+
+      // Bank Account Details
+      bankName: accountDetails?.bankName,
+      accountNumber: accountDetails?.accountNumber,
+      accountName: accountDetails?.accountName,
+      bankCode: accountDetails?.bankCode,
+      accountReference: accountDetails?.accountReference,
     },
     select: {
       id: true,
@@ -92,8 +104,19 @@ export const registerUser = async (data: RegisterUserData) => {
       isPhoneVerified: true,
       isEmailVerified: true,
       createdAt: true,
+      bankName: true,
+      accountNumber: true,
+      accountName: true,
     },
   });
+
+  // Create wallet for user
+  try {
+    await createWallet(user.id);
+  } catch (error) {
+    console.error('Failed to create wallet:', error);
+    // Don't fail registration if wallet creation fails
+  }
 
   // Generate tokens
   const tokens = generateTokens(user.id, user.phone, user.role);
@@ -190,7 +213,7 @@ export const loginUser = async (data: LoginData) => {
     throw new Error('Your account has been suspended. Please contact support.');
   }
 
-  // Verify password
+  //  Verify password
   if (!user.password) {
     throw new Error('Password not set. Please use phone authentication.');
   }
@@ -224,7 +247,7 @@ export const loginUser = async (data: LoginData) => {
  */
 export const refreshAccessToken = async (refreshToken: string) => {
   const { verifyToken } = await import('../utils/jwt.util');
-  
+
   // Verify refresh token
   const decoded = verifyToken(refreshToken);
 

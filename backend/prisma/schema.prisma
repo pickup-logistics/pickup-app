@@ -1,4 +1,4 @@
-// PickUp - Database Schema
+// Pick Up - Database Schema
 // Phase 2: Complete Prisma Schema Design
 
 generator client {
@@ -42,6 +42,13 @@ model User {
   gender          String?
   address         String?
   
+  // Bank Account
+  bankName        String?
+  accountNumber   String?
+  accountName     String?
+  bankCode        String?
+  accountReference String?
+  
   // Verification
   isPhoneVerified Boolean   @default(false)
   isEmailVerified Boolean   @default(false)
@@ -51,6 +58,7 @@ model User {
   ridesAsUser     Ride[]    @relation("UserRides")
   ratingsGiven    Rating[]  @relation("RatingsGiven")
   ratingsReceived Rating[]  @relation("RatingsReceived")
+  wallet          Wallet?
   
   // Timestamps
   createdAt DateTime @default(now())
@@ -442,6 +450,7 @@ model AdminLog {
 // ============================================
 
 enum TransactionType {
+  DEPOSIT      // User deposits to wallet
   PAYMENT      // User pays for ride
   REFUND       // Refund to user
   WITHDRAWAL   // Rider withdraws earnings
@@ -470,7 +479,7 @@ model Transaction {
   status    TransactionStatus @default(PENDING)
   
   // Payment gateway info
-  provider  String?           // 'paystack', 'flutterwave', 'cash', 'wallet'
+  provider  String?           // 'paystack', 'flutterwave', 'cash', 'wallet', 'monnify'
   reference String?           @unique  // Payment reference from gateway
   
   // Additional info
@@ -487,4 +496,22 @@ model Transaction {
   @@index([status])
   @@index([createdAt])
   @@map("transactions")
+}
+
+// ============================================
+// WALLET MODEL
+// ============================================
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  balance   Float    @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+  @@map("wallets")
 }
