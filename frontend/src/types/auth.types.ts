@@ -62,19 +62,6 @@ export interface RiderRegisterData {
   licenseNumber: string;
 }
 
-// Firebase verification
-export interface FirebaseVerification {
-  phone: string;
-  firebaseToken: string;
-}
-
-// OTP verification (legacy, kept for backwards compatibility)
-export interface OTPVerification {
-  phone: string;
-  otp?: string;
-  firebaseToken?: string;
-}
-
 // Auth response from backend
 export interface AuthResponse {
   status: 'success' | 'error';
@@ -87,13 +74,6 @@ export interface AuthResponse {
       expiresIn: string;
     };
   };
-}
-
-// OTP response from backend
-export interface OTPResponse {
-  status: 'success' | 'error';
-  message: string;
-  data?: any;
 }
 
 // Error response
