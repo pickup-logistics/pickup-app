@@ -1,7 +1,6 @@
 import { PrismaClient, User, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { generateTokens } from '../utils/jwt.util';
-import { firebaseAuth } from '../config/firebase.config';
 import { monnifyService } from './monnify.service';
 import { createWallet } from './wallet.service';
 
@@ -13,44 +12,19 @@ export interface RegisterUserData {
   email: string;
   password: string;
   role?: UserRole;
-  firebaseToken?: string; // Add Firebase token
 }
 
 export interface LoginData {
   email?: string;
   phone?: string;
   password?: string;
-  firebaseToken?: string; // Add Firebase token
 }
-
-/**
- * Verify Firebase token and extract phone number
- */
-export const verifyFirebaseToken = async (token: string) => {
-  try {
-    const decodedToken = await firebaseAuth.verifyIdToken(token);
-    return {
-      phoneNumber: decodedToken.phone_number,
-      uid: decodedToken.uid,
-    };
-  } catch (error) {
-    throw new Error('Invalid Firebase token');
-  }
-};
 
 /**
  * Register new user
  */
 export const registerUser = async (data: RegisterUserData) => {
-  const { phone, name, email, password, role = UserRole.USER, firebaseToken } = data;
-
-  // Verify Firebase token if provided (optional for now)
-  if (firebaseToken) {
-    const firebaseData = await verifyFirebaseToken(firebaseToken);
-    if (firebaseData.phoneNumber !== phone) {
-      throw new Error('Phone number mismatch');
-    }
-  }
+  const { phone, name, email, password, role = UserRole.USER } = data;
 
   // Check if user already exists by phone
   const existingUser = await prisma.user.findUnique({
@@ -85,7 +59,7 @@ export const registerUser = async (data: RegisterUserData) => {
       password: hashedPassword,
       role,
       status: 'ACTIVE',
-      isPhoneVerified: !!firebaseToken, // Mark as verified if Firebase token provided
+      isPhoneVerified: false,
 
       // Bank Account Details
       bankName: accountDetails?.bankName,
@@ -128,66 +102,13 @@ export const registerUser = async (data: RegisterUserData) => {
 };
 
 /**
- * Login user with Firebase token
- */
-export const loginWithFirebase = async (firebaseToken: string) => {
-  // Verify Firebase token
-  const firebaseData = await verifyFirebaseToken(firebaseToken);
-  const phone = firebaseData.phoneNumber;
-
-  if (!phone) {
-    throw new Error('Phone number not found in Firebase token');
-  }
-
-  // Find user
-  const user = await prisma.user.findUnique({
-    where: { phone },
-  });
-
-  if (!user) {
-    throw new Error('User not found. Please register first.');
-  }
-
-  // Check if user is active
-  if (user.status !== 'ACTIVE') {
-    throw new Error('Your account has been suspended. Please contact support.');
-  }
-
-  // Update last login and mark phone as verified
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      lastLoginAt: new Date(),
-      isPhoneVerified: true,
-    },
-  });
-
-  // Generate tokens
-  const tokens = generateTokens(user.id, user.phone, user.role);
-
-  // Return user without password
-  const { password: _, ...userWithoutPassword } = user;
-
-  return {
-    user: userWithoutPassword,
-    tokens,
-  };
-};
-
-/**
- * Login user with email/phone and password (fallback)
+ * Login user with email/phone and password
  */
 export const loginUser = async (data: LoginData) => {
-  const { email, phone, password, firebaseToken } = data;
+  const { email, phone, password } = data;
 
-  // If Firebase token provided, use Firebase login
-  if (firebaseToken) {
-    return loginWithFirebase(firebaseToken);
-  }
-
-  // Otherwise, use password login
   if (!password) {
-    throw new Error('Password or Firebase token required');
+    throw new Error('Password is required');
   }
 
   // Find user by email or phone

@@ -3,40 +3,23 @@ import type {
   LoginCredentials,
   UserRegisterData,
   RiderRegisterData,
-  FirebaseVerification,
   AuthResponse,
 } from '@/types/auth.types';
 
 export const authAPI = {
-  // ============= USER AUTH WITH FIREBASE =============
-  
+  // ============= USER AUTH =============
+
   /**
-   * Register a new user with Firebase token
+   * Register a new user
    */
-  registerUser: async (data: UserRegisterData & { firebaseToken?: string }): Promise<AuthResponse> => {
+  registerUser: async (data: UserRegisterData): Promise<AuthResponse> => {
     console.log('Registering user with data:', data);
     const response = await axios.post('/v1/auth/register', data);
     return response.data;
   },
 
   /**
-   * Login with Firebase token
-   */
-  loginWithFirebase: async (data: FirebaseVerification): Promise<AuthResponse> => {
-    const response = await axios.post('/v1/auth/verify-firebase', data);
-    return response.data;
-  },
-
-  /**
-   * Verify Firebase token and complete authentication
-   */
-  verifyUserOTP: async (data: { phone: string; firebaseToken: string }): Promise<AuthResponse> => {
-    const response = await axios.post('/v1/auth/verify-firebase', data);
-    return response.data;
-  },
-  
-  /**
-   * Login with password (alternative to Firebase)
+   * Login with password
    */
   loginUser: async (data: LoginCredentials): Promise<AuthResponse> => {
     const response = await axios.post('/v1/auth/login', data);
@@ -48,7 +31,7 @@ export const authAPI = {
   /**
    * Register a new rider
    */
-  registerRider: async (data: RiderRegisterData & { firebaseToken?: string }): Promise<AuthResponse> => {
+  registerRider: async (data: RiderRegisterData): Promise<AuthResponse> => {
     const response = await axios.post('/v1/rider/register', data);
     return response.data;
   },
@@ -66,18 +49,10 @@ export const authAPI = {
   },
 
   /**
-   * Login rider with Firebase
+   * Login rider with phone and password
    */
-  loginRider: async (data: { phone: string; firebaseToken: string }): Promise<AuthResponse> => {
-    const response = await axios.post('/v1/auth/verify-firebase', data);
-    return response.data;
-  },
-
-  /**
-   * Verify Firebase token for rider
-   */
-  verifyRiderOTP: async (data: { phone: string; firebaseToken: string }): Promise<AuthResponse> => {
-    const response = await axios.post('/v1/auth/verify-firebase', data);
+  loginRider: async (data: LoginCredentials): Promise<AuthResponse> => {
+    const response = await axios.post('/v1/auth/login', data);
     return response.data;
   },
 
@@ -107,6 +82,4 @@ export const authAPI = {
     const response = await axios.get('/v1/auth/me');
     return response.data;
   },
-
-  // Note: resendOTP not needed with Firebase as it's handled client-side
 };

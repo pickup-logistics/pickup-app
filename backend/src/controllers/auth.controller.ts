@@ -27,11 +27,6 @@ export const register = async (req: Request, res: Response) => {
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters')
       .run(req);
-    await body('firebaseToken')
-      .optional()
-      .isString()
-      .withMessage('Firebase token must be a string')
-      .run(req);
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -42,14 +37,13 @@ export const register = async (req: Request, res: Response) => {
       });
     }
 
-    const { phone, name, email, password, firebaseToken } = req.body;
+    const { phone, name, email, password } = req.body;
 
     const result = await authService.registerUser({
       phone,
       name,
       email,
       password,
-      firebaseToken,
     });
 
     return res.status(201).json({
@@ -67,7 +61,7 @@ export const register = async (req: Request, res: Response) => {
 };
 
 /**
- * Login with Firebase token or password
+ * Login with password
  * POST /api/v1/auth/login
  */
 export const login = async (req: Request, res: Response) => {
@@ -85,14 +79,8 @@ export const login = async (req: Request, res: Response) => {
       .withMessage('Invalid Nigerian phone number format')
       .run(req);
     await body('password')
-      .optional()
       .notEmpty()
       .withMessage('Password is required')
-      .run(req);
-    await body('firebaseToken')
-      .optional()
-      .isString()
-      .withMessage('Firebase token must be a string')
       .run(req);
 
     const errors = validationResult(req);
@@ -104,7 +92,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    const { email, phone, password, firebaseToken } = req.body;
+    const { email, phone, password } = req.body;
 
     // Require either email or phone
     if (!email && !phone) {
@@ -114,7 +102,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    const result = await authService.loginUser({ email, phone, password, firebaseToken });
+    const result = await authService.loginUser({ email, phone, password });
 
     return res.status(200).json({
       status: 'success',
@@ -126,44 +114,6 @@ export const login = async (req: Request, res: Response) => {
     return res.status(401).json({
       status: 'error',
       message: error.message || 'Login failed',
-    });
-  }
-};
-
-/**
- * Verify Firebase token and login
- * POST /api/v1/auth/verify-firebase
- */
-export const verifyFirebase = async (req: Request, res: Response) => {
-  try {
-    await body('firebaseToken')
-      .notEmpty()
-      .withMessage('Firebase token is required')
-      .run(req);
-
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Validation failed',
-        errors: errors.array(),
-      });
-    }
-
-    const { firebaseToken } = req.body;
-
-    const result = await authService.loginWithFirebase(firebaseToken);
-
-    return res.status(200).json({
-      status: 'success',
-      message: 'Login successful',
-      data: result,
-    });
-  } catch (error: any) {
-    console.error('Firebase verification error:', error);
-    return res.status(401).json({
-      status: 'error',
-      message: error.message || 'Firebase verification failed',
     });
   }
 };
