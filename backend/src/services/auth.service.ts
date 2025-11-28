@@ -1,7 +1,6 @@
 import { PrismaClient, User, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { generateTokens } from '../utils/jwt.util';
-import { monnifyService } from './monnify.service';
 import { createWallet } from './wallet.service';
 
 const prisma = new PrismaClient();
@@ -47,9 +46,6 @@ export const registerUser = async (data: RegisterUserData) => {
   // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Reserve bank account
-  const accountDetails = await monnifyService.reserveAccount(name, email);
-
   // Create user
   const user = await prisma.user.create({
     data: {
@@ -60,13 +56,6 @@ export const registerUser = async (data: RegisterUserData) => {
       role,
       status: 'ACTIVE',
       isPhoneVerified: false,
-
-      // Bank Account Details
-      bankName: accountDetails?.bankName,
-      accountNumber: accountDetails?.accountNumber,
-      accountName: accountDetails?.accountName,
-      bankCode: accountDetails?.bankCode,
-      accountReference: accountDetails?.accountReference,
     },
     select: {
       id: true,
@@ -81,6 +70,7 @@ export const registerUser = async (data: RegisterUserData) => {
       bankName: true,
       accountNumber: true,
       accountName: true,
+      // Note: Bank details will be null initially
     },
   });
 

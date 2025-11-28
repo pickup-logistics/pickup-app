@@ -80,7 +80,7 @@ class MonnifyService {
         }
     }
 
-    async reserveAccount(name: string, email: string) {
+    async reserveAccount(name: string, email: string, bvn: string) {
         try {
             const token = await this.authenticate();
             const accountReference = `REF-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -94,7 +94,8 @@ class MonnifyService {
                     contractCode: MONNIFY_CONTRACT_CODE,
                     customerEmail: email,
                     customerName: name,
-                    bvn: '', // Optional
+                    getAllAvailableBanks: true,
+                    bvn,
                 },
                 {
                     headers: {
