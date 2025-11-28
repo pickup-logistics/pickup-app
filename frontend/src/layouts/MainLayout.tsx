@@ -20,12 +20,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-primary-600 rounded-full">
-                <Bike className="w-6 h-6 text-white" />
+            <a href="/home">
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-center w-10 h-10 bg-primary-600 rounded-full">
+                  <Bike className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-xl font-bold text-gray-900">PickUp</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">PickUp</span>
-            </div>
+            </a>
 
             {/* User Info & Logout */}
             <div className="flex items-center space-x-4">
