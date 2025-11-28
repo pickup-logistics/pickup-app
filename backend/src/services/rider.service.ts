@@ -1,5 +1,6 @@
 import { PrismaClient, VehicleType, RiderStatus } from '@prisma/client';
 import { deleteFile } from '../utils/upload.util';
+import { monnifyService } from './monnify.service';
 
 const prisma = new PrismaClient();
 
@@ -83,10 +84,31 @@ export const registerRider = async (data: RiderRegistrationData) => {
     },
   });
 
-  // Update user role to RIDER
+  // Reserve bank account
+  let bankDetails = {};
+  try {
+    const accountDetails = await monnifyService.reserveAccount(user.name, user.email!, '23456789002');
+    if (accountDetails) {
+      bankDetails = {
+        bankName: accountDetails.bankName,
+        accountNumber: accountDetails.accountNumber,
+        accountName: accountDetails.accountName,
+        bankCode: accountDetails.bankCode,
+        accountReference: accountDetails.accountReference,
+      };
+    }
+  } catch (error) {
+    console.error('Failed to reserve account:', error);
+    // Continue with registration even if account reservation fails
+  }
+
+  // Update user role to RIDER and save bank details
   await prisma.user.update({
     where: { id: userId },
-    data: { role: 'RIDER' },
+    data: {
+      role: 'RIDER',
+      ...bankDetails
+    },
   });
 
   return rider;

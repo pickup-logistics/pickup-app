@@ -1,6 +1,7 @@
 import { PrismaClient, User, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { generateTokens } from '../utils/jwt.util';
+import { createWallet } from './wallet.service';
 
 const prisma = new PrismaClient();
 
@@ -66,8 +67,20 @@ export const registerUser = async (data: RegisterUserData) => {
       isPhoneVerified: true,
       isEmailVerified: true,
       createdAt: true,
+      bankName: true,
+      accountNumber: true,
+      accountName: true,
+      // Note: Bank details will be null initially
     },
   });
+
+  // Create wallet for user
+  try {
+    await createWallet(user.id);
+  } catch (error) {
+    console.error('Failed to create wallet:', error);
+    // Don't fail registration if wallet creation fails
+  }
 
   // Generate tokens
   const tokens = generateTokens(user.id, user.phone, user.role);
@@ -111,7 +124,7 @@ export const loginUser = async (data: LoginData) => {
     throw new Error('Your account has been suspended. Please contact support.');
   }
 
-  // Verify password
+  //  Verify password
   if (!user.password) {
     throw new Error('Password not set. Please use phone authentication.');
   }
@@ -145,7 +158,7 @@ export const loginUser = async (data: LoginData) => {
  */
 export const refreshAccessToken = async (refreshToken: string) => {
   const { verifyToken } = await import('../utils/jwt.util');
-  
+
   // Verify refresh token
   const decoded = verifyToken(refreshToken);
 
