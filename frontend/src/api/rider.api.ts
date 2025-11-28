@@ -111,4 +111,68 @@ export const riderAPI = {
     const response = await axios.get('/v1/riders');
     return response.data;
   },
+
+  /**
+   * Get pending ride requests for rider
+   */
+  getPendingRides: async (): Promise<{ status: string; data: any[] }> => {
+    const response = await axios.get('/v1/rides/pending');
+    return response.data;
+  },
+
+  /**
+   * Get rider wallet details
+   */
+  getWallet: async (): Promise<{ status: string; data: { balance: number } }> => {
+    const response = await axios.get('/v1/wallet/balance');
+    return response.data;
+  },
+
+  /**
+   * Get ride history
+   */
+  getRideHistory: async (): Promise<{ status: string; data: any[] }> => {
+    const response = await axios.get('/v1/rides/history');
+    return response.data;
+  },
+
+  /**
+   * Accept a ride request
+   */
+  acceptRide: async (rideId: string): Promise<{ status: string; message: string; data: any }> => {
+    const response = await axios.post(`/v1/rides/${rideId}/accept`);
+    return response.data;
+  },
+
+  /**
+   * Reject a ride request
+   */
+  rejectRide: async (rideId: string): Promise<{ status: string; message: string }> => {
+    const response = await axios.post(`/v1/rides/${rideId}/reject`);
+    return response.data;
+  },
+
+  /**
+   * Start a ride
+   */
+  startRide: async (rideId: string): Promise<{ status: string; message: string; data: any }> => {
+    const response = await axios.post(`/v1/rides/${rideId}/start`);
+    return response.data;
+  },
+
+  /**
+   * Complete a ride
+   */
+  completeRide: async (rideId: string): Promise<{ status: string; message: string; data: any }> => {
+    const response = await axios.post(`/v1/rides/${rideId}/complete`);
+    return response.data;
+  },
+
+  /**
+   * Get wallet transactions
+   */
+  getTransactions: async (): Promise<{ status: string; data: any[] }> => {
+    const response = await axios.get('/v1/wallet/transactions');
+    return response.data;
+  },
 };
