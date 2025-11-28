@@ -15,6 +15,7 @@ import adminRoutes from './routes/admin.routes';
 import rideRoutes from './routes/ride.routes';
 import locationRoutes from './routes/location.routes';
 import ratingRoutes from './routes/rating.routes';
+import walletRoutes from './routes/wallet.routes';
 
 // Import middlewares
 import { errorHandler } from './middlewares/errorHandler';
@@ -68,6 +69,7 @@ app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/rides`, rideRoutes);
 app.use(`/api/${API_VERSION}/location`, locationRoutes);
 app.use(`/api/${API_VERSION}/ratings`, ratingRoutes);
+app.use(`/api/${API_VERSION}/wallet`, walletRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {

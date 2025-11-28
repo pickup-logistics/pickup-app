@@ -124,7 +124,7 @@ export const riderAPI = {
    * Get rider wallet details
    */
   getWallet: async (): Promise<{ status: string; data: { balance: number } }> => {
-    const response = await axios.get('/v1/wallet');
+    const response = await axios.get('/v1/wallet/balance');
     return response.data;
   },
 
