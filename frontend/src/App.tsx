@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { useAuthStore } from '@/store/authStore';
 
 // Auth Pages
 import { Login } from '@/features/auth/pages/Login';
@@ -15,25 +16,29 @@ import { ApplyAsRider } from '@/features/driver/pages/ApplyAsRider';
 import { PendingApproval } from '@/features/driver/pages/PendingApproval';
 import { DriverRegister } from '@/features/driver/pages/DriverRegister';
 import { DriverLogin } from '@/features/driver/pages/DriverLogin';
+import { DriverHome as RiderDashboard } from '@/features/driver/pages/DriverHome';
+import { RiderWallet } from '@/features/driver/pages/RiderWallet';
+import { RiderHistory } from '@/features/driver/pages/RiderHistory';
 
 // Layouts
-import { DriverLayout } from '@/layouts/DriverLayout';
 import { AdminLayout } from '@/layouts/AdminLayout';
 
 // Route Guards
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { RoleRoute } from '@/routes/RoleRoute';
 
-const DriverHome = () => (
-  <DriverLayout>
-    <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Rider Dashboard</h1>
-        <p className="text-gray-600">Rider Home Page - Coming Soon</p>
-      </div>
-    </div>
-  </DriverLayout>
-);
+// Role-based home redirect component
+const RoleBasedHome = () => {
+  const { user } = useAuthStore();
+
+  if (user?.role === 'RIDER') {
+    return <Navigate to="/rider/home" replace />;
+  } else if (user?.role === 'ADMIN') {
+    return <Navigate to="/admin" replace />;
+  } else {
+    return <Navigate to="/user/home" replace />;
+  }
+};
 
 const AdminDashboard = () => (
   <AdminLayout>
@@ -116,9 +121,19 @@ function App() {
             }
           />
 
-          {/* User Routes */}
+          {/* Home Route - Redirects based on role */}
           <Route
             path="/"
+            element={
+              <ProtectedRoute>
+                <RoleBasedHome />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* User Routes */}
+          <Route
+            path="/user/home"
             element={
               <ProtectedRoute>
                 <RoleRoute allowedRoles={['USER']}>
@@ -136,13 +151,43 @@ function App() {
             }
           />
 
-          {/* Driver Routes */}
+          {/* Driver/Rider Routes */}
           <Route
-            path="/driver/*"
+            path="/rider/home"
             element={
               <ProtectedRoute>
                 <RoleRoute allowedRoles={['RIDER']}>
-                  <DriverHome />
+                  <RiderDashboard />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rider/wallet"
+            element={
+              <ProtectedRoute>
+                <RoleRoute allowedRoles={['RIDER']}>
+                  <RiderWallet />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rider/history"
+            element={
+              <ProtectedRoute>
+                <RoleRoute allowedRoles={['RIDER']}>
+                  <RiderHistory />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rider/profile"
+            element={
+              <ProtectedRoute>
+                <RoleRoute allowedRoles={['RIDER']}>
+                  <ProfileSettings />
                 </RoleRoute>
               </ProtectedRoute>
             }

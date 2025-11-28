@@ -18,7 +18,7 @@ export const RoleRoute: React.FC<RoleRouteProps> = ({ children, allowedRoles }) 
   if (!user || !allowedRoles.includes(user.role)) {
     // Redirect based on user role
     if (user?.role === 'RIDER') {
-      return <Navigate to="/driver" replace />;
+      return <Navigate to="/rider/home" replace />;
     } else if (user?.role === 'ADMIN') {
       return <Navigate to="/admin" replace />;
     } else {
