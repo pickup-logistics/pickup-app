@@ -38,11 +38,8 @@ export const riderAPI = {
       formData.append('licensePhoto', files.licensePhoto);
     }
 
-    const response = await axios.post('/v1/rider/register', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Don't set Content-Type manually - let axios set it with the boundary
+    const response = await axios.post('/v1/riders/register', formData);
     return response.data;
   },
 
@@ -50,7 +47,7 @@ export const riderAPI = {
    * Get rider profile
    */
   getRiderProfile: async (): Promise<{ status: string; data: any }> => {
-    const response = await axios.get('/v1/rider/profile');
+    const response = await axios.get('/v1/riders/profile');
     return response.data;
   },
 
@@ -58,7 +55,7 @@ export const riderAPI = {
    * Update rider profile
    */
   updateRiderProfile: async (data: Partial<RiderApplicationData>): Promise<{ status: string; message: string; data: any }> => {
-    const response = await axios.patch('/v1/rider/profile', data);
+    const response = await axios.patch('/v1/riders/profile', data);
     return response.data;
   },
 
@@ -78,11 +75,8 @@ export const riderAPI = {
       formData.append('licensePhoto', files.licensePhoto);
     }
 
-    const response = await axios.post('/v1/rider/documents', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Don't set Content-Type manually - let axios set it with the boundary
+    const response = await axios.post('/v1/riders/documents', formData);
     return response.data;
   },
 
@@ -90,7 +84,7 @@ export const riderAPI = {
    * Toggle rider availability
    */
   toggleAvailability: async (isAvailable: boolean): Promise<{ status: string; message: string; data: any }> => {
-    const response = await axios.patch('/v1/rider/availability', { isAvailable });
+    const response = await axios.patch('/v1/riders/availability', { isAvailable });
     return response.data;
   },
 
@@ -98,7 +92,7 @@ export const riderAPI = {
    * Update rider location
    */
   updateLocation: async (latitude: number, longitude: number): Promise<{ status: string; message: string }> => {
-    const response = await axios.patch('/v1/rider/location', { latitude, longitude });
+    const response = await axios.patch('/v1/riders/location', { latitude, longitude });
     return response.data;
   },
 
@@ -106,7 +100,7 @@ export const riderAPI = {
    * Get rider statistics
    */
   getStatistics: async (): Promise<{ status: string; data: any }> => {
-    const response = await axios.get('/v1/rider/statistics');
+    const response = await axios.get('/v1/riders/statistics');
     return response.data;
   },
 
@@ -114,7 +108,7 @@ export const riderAPI = {
    * Get all approved riders (public)
    */
   getApprovedRiders: async (): Promise<{ status: string; data: any[] }> => {
-    const response = await axios.get('/v1/rider');
+    const response = await axios.get('/v1/riders');
     return response.data;
   },
 };

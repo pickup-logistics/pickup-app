@@ -246,6 +246,18 @@ export const updateUserProfile = async (userId: string, data: Partial<User>) => 
       address: true,
       isPhoneVerified: true,
       isEmailVerified: true,
+      rider: {
+        select: {
+          id: true,
+          vehicleType: true,
+          plateNumber: true,
+          status: true,
+          isAvailable: true,
+          rating: true,
+          completedRides: true,
+          totalEarnings: true,
+        },
+      },
     },
   });
 

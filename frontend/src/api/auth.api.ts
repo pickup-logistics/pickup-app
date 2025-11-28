@@ -40,11 +40,8 @@ export const authAPI = {
    * Upload rider documents
    */
   uploadRiderDocuments: async (formData: FormData): Promise<{ status: string; message: string }> => {
-    const response = await axios.post('/v1/rider/documents', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Don't set Content-Type manually - let axios set it with the boundary
+    const response = await axios.post('/v1/riders/documents', formData);
     return response.data;
   },
 

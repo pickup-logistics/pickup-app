@@ -13,6 +13,8 @@ import { ProfileSettings } from '@/features/rider/pages/ProfileSettings';
 // Driver Pages
 import { ApplyAsRider } from '@/features/driver/pages/ApplyAsRider';
 import { PendingApproval } from '@/features/driver/pages/PendingApproval';
+import { DriverRegister } from '@/features/driver/pages/DriverRegister';
+import { DriverLogin } from '@/features/driver/pages/DriverLogin';
 
 // Layouts
 import { DriverLayout } from '@/layouts/DriverLayout';
@@ -74,6 +76,24 @@ function App() {
             element={
               <ProtectedRoute requireAuth={false}>
                 <Register />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Driver Public Routes */}
+          <Route
+            path="/driver/register"
+            element={
+              <ProtectedRoute requireAuth={false}>
+                <DriverRegister />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/driver/login"
+            element={
+              <ProtectedRoute requireAuth={false}>
+                <DriverLogin />
               </ProtectedRoute>
             }
           />

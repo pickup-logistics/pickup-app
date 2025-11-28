@@ -111,7 +111,19 @@ export const registerRider = async (data: RiderRegistrationData) => {
     },
   });
 
-  return rider;
+  // Generate new tokens with updated role
+  const { generateTokens } = await import('../utils/jwt.util');
+  const tokens = generateTokens(userId, user.phone, 'RIDER');
+
+  // Fetch the complete updated user profile with rider data
+  const { getUserProfile } = await import('./auth.service');
+  const updatedUserProfile = await getUserProfile(userId);
+
+  return {
+    rider,
+    user: updatedUserProfile,
+    tokens,
+  };
 };
 
 /**

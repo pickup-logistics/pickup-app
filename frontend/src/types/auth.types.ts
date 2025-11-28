@@ -1,6 +1,24 @@
 // User roles
 export type UserRole = 'USER' | 'RIDER' | 'ADMIN';
 
+// Rider status
+export type RiderStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+
+// Vehicle type
+export type VehicleType = 'BIKE' | 'TRICYCLE' | 'BUS' | 'TRUCK';
+
+// Rider data interface (from backend Rider model)
+export interface RiderData {
+  id: string;
+  vehicleType: VehicleType;
+  plateNumber: string;
+  status: RiderStatus;
+  isAvailable: boolean;
+  rating: number;
+  completedRides: number;
+  totalEarnings: number;
+}
+
 // User interface
 export interface User {
   id: string;
@@ -12,6 +30,7 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   isPhoneVerified: boolean;
+  rider?: RiderData; // Optional rider data if user has applied as rider
 }
 
 // Rider-specific data

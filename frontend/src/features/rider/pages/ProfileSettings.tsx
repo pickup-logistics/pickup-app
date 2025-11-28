@@ -1,11 +1,16 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Phone, Bike, LogOut, ChevronRight } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Bike, LogOut, ChevronRight, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { MainLayout } from '@/layouts/MainLayout';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export function ProfileSettings() {
   const navigate = useNavigate();
   const { user, clearAuth } = useAuthStore();
+  const { currentUser } = useAuth();
+
+  const riderData = currentUser?.data?.user?.rider;
+  const riderStatus = riderData?.status;
 
   const handleLogout = () => {
     clearAuth();
@@ -77,8 +82,9 @@ export function ProfileSettings() {
           </div>
         </div>
 
-        {/* Become a Rider Card */}
-        {user?.role !== 'RIDER' && (
+        {/* Become a Rider / Rider Status Card */}
+        {!riderData ? (
+          // Show "Become a Rider" if no application
           <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-6 mb-6 border-2 border-green-200">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -96,6 +102,60 @@ export function ProfileSettings() {
                   Apply Now
                   <ChevronRight className="w-5 h-5" />
                 </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // Show rider application status
+          <div className={`rounded-xl shadow-lg p-6 mb-6 border-2 ${
+            riderStatus === 'PENDING' ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200' :
+            riderStatus === 'APPROVED' ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-200' :
+            'bg-gradient-to-br from-red-50 to-red-100 border-red-200'
+          }`}>
+            <div className="flex items-start gap-4">
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                riderStatus === 'PENDING' ? 'bg-yellow-600' :
+                riderStatus === 'APPROVED' ? 'bg-green-600' :
+                'bg-red-600'
+              }`}>
+                {riderStatus === 'PENDING' ? (
+                  <Clock className="w-6 h-6 text-white" />
+                ) : riderStatus === 'APPROVED' ? (
+                  <CheckCircle className="w-6 h-6 text-white" />
+                ) : (
+                  <XCircle className="w-6 h-6 text-white" />
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-lg font-bold text-gray-900">Rider Application</h3>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    riderStatus === 'PENDING' ? 'bg-yellow-200 text-yellow-800' :
+                    riderStatus === 'APPROVED' ? 'bg-green-200 text-green-800' :
+                    'bg-red-200 text-red-800'
+                  }`}>
+                    {riderStatus}
+                  </span>
+                </div>
+                <p className="text-gray-700 mb-3">
+                  {riderStatus === 'PENDING' && 'Your application is under review. This typically takes 1-3 business days.'}
+                  {riderStatus === 'APPROVED' && 'Your application has been approved! You can now start accepting rides.'}
+                  {(riderStatus === 'REJECTED' || riderStatus === 'SUSPENDED') && 'Please contact support for more information.'}
+                </p>
+                {riderStatus === 'APPROVED' && (
+                  <button
+                    onClick={() => navigate('/driver/home')}
+                    className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    Go to Dashboard
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                )}
+                {riderStatus === 'PENDING' && (
+                  <div className="text-sm text-gray-600">
+                    <strong>Vehicle:</strong> {riderData.vehicleType} • <strong>Plate:</strong> {riderData.plateNumber}
+                  </div>
+                )}
               </div>
             </div>
           </div>

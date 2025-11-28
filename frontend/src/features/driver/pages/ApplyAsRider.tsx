@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
-import { Bike, Upload, FileText, CreditCard, ArrowLeft } from 'lucide-react';
+import { Bike, Upload, FileText, CreditCard, ArrowLeft, Clock, CheckCircle, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { riderAPI } from '@/api/rider.api';
 import { MainLayout } from '@/layouts/MainLayout';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useAuthStore } from '@/store/authStore';
 
 type Step = 'vehicle' | 'documents';
 
 export const ApplyAsRider: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<Step>('vehicle');
   const [vehicleData, setVehicleData] = useState({
-    vehicleType: 'MOTORCYCLE',
+    vehicleType: 'BIKE',
     vehicleMake: '',
     vehicleModel: '',
     vehicleYear: '',
@@ -30,6 +32,13 @@ export const ApplyAsRider: React.FC = () => {
   });
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { setAuth } = useAuthStore();
+  const { currentUser } = useAuth();
+
+  // Check if user already has a rider application
+  const riderStatus = currentUser?.data?.user?.rider?.status;
+  const hasExistingApplication = !!currentUser?.data?.user?.rider;
 
   const applyMutation = useMutation({
     mutationFn: async () => {
@@ -53,9 +62,18 @@ export const ApplyAsRider: React.FC = () => {
         }
       );
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      // Update auth store with new user data and tokens if returned
+      if (response.data?.user && response.data?.tokens) {
+        const { user, tokens } = response.data;
+        setAuth(user, tokens.accessToken, tokens.refreshToken);
+      }
+
+      // Invalidate and refetch current user query to get updated rider status
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+
       toast.success('Application submitted successfully! Awaiting approval.');
-      navigate('/driver/pending');
+      navigate('/');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Application failed');
@@ -110,6 +128,90 @@ export const ApplyAsRider: React.FC = () => {
 
     applyMutation.mutate();
   };
+
+  // Render status card if user already has an application
+  if (hasExistingApplication) {
+    const statusConfig = {
+      PENDING: {
+        icon: Clock,
+        color: 'yellow',
+        title: 'Application Under Review',
+        message: 'Your rider application is currently being reviewed by our team. This typically takes 1-3 business days.',
+      },
+      APPROVED: {
+        icon: CheckCircle,
+        color: 'green',
+        title: 'Application Approved!',
+        message: 'Congratulations! Your rider application has been approved. You can now start accepting rides.',
+      },
+      REJECTED: {
+        icon: XCircle,
+        color: 'red',
+        title: 'Application Not Approved',
+        message: 'Unfortunately, your rider application was not approved. Please contact support for more information.',
+      },
+      SUSPENDED: {
+        icon: XCircle,
+        color: 'red',
+        title: 'Account Suspended',
+        message: 'Your rider account has been suspended. Please contact support for assistance.',
+      },
+    };
+
+    const config = statusConfig[riderStatus as keyof typeof statusConfig];
+    const Icon = config?.icon || Clock;
+
+    return (
+      <MainLayout>
+        <div className="max-w-2xl mx-auto">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back to Home
+          </button>
+
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="flex justify-center mb-6">
+              <div className={`w-20 h-20 bg-${config?.color}-100 rounded-full flex items-center justify-center`}>
+                <Icon className={`w-10 h-10 text-${config?.color}-600`} />
+              </div>
+            </div>
+
+            <h1 className="text-3xl font-bold text-gray-900 text-center mb-4">
+              {config?.title}
+            </h1>
+
+            <p className="text-lg text-gray-600 text-center mb-8">
+              {config?.message}
+            </p>
+
+            <div className="flex gap-3">
+              {riderStatus === 'APPROVED' && (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  onClick={() => navigate('/driver/home')}
+                >
+                  Go to Dashboard
+                </Button>
+              )}
+              <Button
+                variant={riderStatus === 'APPROVED' ? 'secondary' : 'primary'}
+                size="lg"
+                fullWidth
+                onClick={() => navigate('/')}
+              >
+                Back to Home
+              </Button>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -185,9 +287,10 @@ export const ApplyAsRider: React.FC = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required
                 >
-                  <option value="MOTORCYCLE">Motorcycle</option>
+                  <option value="BIKE">Bike/Motorcycle</option>
                   <option value="TRICYCLE">Tricycle</option>
-                  <option value="CAR">Car</option>
+                  <option value="BUS">Bus</option>
+                  <option value="TRUCK">Truck</option>
                 </select>
               </div>
 

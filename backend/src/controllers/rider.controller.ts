@@ -61,7 +61,7 @@ export const register = async (req: Request, res: Response) => {
     const vehiclePhoto = files?.vehiclePhoto?.[0]?.filename;
     const licensePhoto = files?.licensePhoto?.[0]?.filename;
 
-    const rider = await riderService.registerRider({
+    const result = await riderService.registerRider({
       userId: req.user.userId,
       vehicleType,
       vehicleMake,
@@ -81,7 +81,7 @@ export const register = async (req: Request, res: Response) => {
     return res.status(201).json({
       status: 'success',
       message: 'Rider registration submitted successfully. Awaiting approval.',
-      data: rider,
+      data: result,
     });
   } catch (error: any) {
     console.error('Rider registration error:', error);
