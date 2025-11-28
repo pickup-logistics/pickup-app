@@ -12,14 +12,12 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Filter,
 } from 'lucide-react';
 import { riderAPI } from '@/api/rider.api';
 
 export const RiderHistory: React.FC = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'COMPLETED' | 'CANCELLED'>('all');
-  const [selectedRide, setSelectedRide] = useState<any>(null);
 
   // Fetch ride history
   const { data: historyData } = useQuery({
@@ -114,8 +112,7 @@ export const RiderHistory: React.FC = () => {
             filteredRides.map((ride: any) => (
               <div
                 key={ride.id}
-                className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => setSelectedRide(ride)}
+                className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
               >
                 {/* Ride Header */}
                 <div className="flex items-start justify-between mb-3">

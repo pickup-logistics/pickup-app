@@ -114,7 +114,7 @@ export const DriverHome: React.FC = () => {
               <DollarSign className="w-5 h-5 opacity-80" />
             </div>
             <p className="text-sm opacity-90 mb-1">Wallet Balance</p>
-            <p className="text-2xl font-bold">¦{walletBalance.toLocaleString()}</p>
+            <p className="text-2xl font-bold">ï¿½{walletBalance.toLocaleString()}</p>
           </div>
 
           {/* Total Earnings */}
@@ -123,7 +123,7 @@ export const DriverHome: React.FC = () => {
               <TrendingUp className="w-8 h-8 opacity-80" />
             </div>
             <p className="text-sm opacity-90 mb-1">Total Earnings</p>
-            <p className="text-2xl font-bold">¦{statsData.totalEarnings.toLocaleString()}</p>
+            <p className="text-2xl font-bold">ï¿½{statsData.totalEarnings.toLocaleString()}</p>
           </div>
 
           {/* Completed Rides */}
@@ -150,14 +150,14 @@ export const DriverHome: React.FC = () => {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">Ride Requests</h2>
-              {pendingRides?.data?.length > 0 && (
+              {pendingRides?.data && pendingRides.data.length > 0 && (
                 <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
                   {pendingRides.data.length} New
                 </span>
               )}
             </div>
 
-            {pendingRides?.data?.length > 0 ? (
+            {pendingRides?.data && pendingRides.data.length > 0 ? (
               <div className="space-y-4">
                 {pendingRides.data.map((ride: any) => (
                   <RideRequestCard key={ride.id} ride={ride} onUpdate={refetchRides} />
@@ -221,7 +221,7 @@ export const DriverHome: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600 mb-1">Earnings Today</p>
-              <p className="text-2xl font-bold text-gray-900">¦0</p>
+              <p className="text-2xl font-bold text-gray-900">ï¿½0</p>
             </div>
             <div>
               <p className="text-sm text-gray-600 mb-1">Online Hours</p>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { X, MapPin, Navigation, DollarSign, User, Check, XCircle } from 'lucide-react';
+import { MapPin, Navigation, DollarSign, User, Check, XCircle } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Modal } from '@/components/common/Modal';
 

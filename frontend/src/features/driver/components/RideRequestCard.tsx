@@ -16,7 +16,7 @@ export const RideRequestCard: React.FC<RideRequestCardProps> = ({ ride, onUpdate
 
   const acceptMutation = useMutation({
     mutationFn: () => riderAPI.acceptRide(ride.id),
-    onSuccess: (response) => {
+    onSuccess: () => {
       toast.success('Ride accepted! Navigate to pickup location');
       onUpdate();
       setShowDetails(false);
