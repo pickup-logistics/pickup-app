@@ -49,7 +49,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     // Attach user info to request
     req.user = decoded;
 
-    next();
+    return next();
   } catch (error) {
     console.error('Authentication error:', error);
     return res.status(401).json({
@@ -78,7 +78,7 @@ export const authorize = (...allowedRoles: UserRole[]) => {
       });
     }
 
-    next();
+    return next();
   };
 };
 
@@ -116,7 +116,7 @@ export const isAuthenticated = (req: Request): boolean => {
  * Check if user has specific role
  */
 export const hasRole = (req: Request, role: UserRole): boolean => {
-  return req.user?.role === role;
+  return req.user?.role === role || false;
 };
 
 /**
