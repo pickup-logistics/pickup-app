@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { UserRole } from '@prisma/client';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -23,9 +23,11 @@ export const generateAccessToken = (userId: string, phone: string, role: UserRol
     type: 'access',
   };
 
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
-  });
+  const options: SignOptions = {
+    expiresIn: JWT_EXPIRES_IN as SignOptions['expiresIn'],
+  };
+
+  return jwt.sign(payload, JWT_SECRET, options);
 };
 
 /**
@@ -39,9 +41,11 @@ export const generateRefreshToken = (userId: string, phone: string, role: UserRo
     type: 'refresh',
   };
 
-  return jwt.sign(payload, JWT_SECRET, {
+  const options: SignOptions = {
     expiresIn: REFRESH_TOKEN_EXPIRES_IN,
-  });
+  };
+
+  return jwt.sign(payload, JWT_SECRET, options);
 };
 
 /**
