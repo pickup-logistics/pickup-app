@@ -14,7 +14,9 @@
     "test": "jest"
   },
   "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@prisma/client": "^5.22.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",
